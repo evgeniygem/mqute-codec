@@ -1,54 +1,20 @@
-use crate::codec::util::decode_word;
-use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use bytes::{BufMut, BytesMut};
+use crate::protocol::common::util;
+use crate::protocol::PacketType;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PubComp {
-    packet_id: u16,
-}
+// Create 'PubComp' packet
+util::id_packet!(PubComp);
 
-impl PubComp {
-    pub fn new(packet_id: u16) -> Self {
-        PubComp { packet_id }
-    }
-}
+// Implement decode
+util::id_packet_decode_impl!(PubComp, PacketType::PubComp);
 
-impl Decode for PubComp {
-    fn decode(mut packet: RawPacket) -> Result<Self, Error> {
-        if packet.header.packet_type() != PacketType::PubComp || packet.header.flags() != 0 {
-            return Err(Error::MalformedPacket);
-        }
-        let packet_id = decode_word(&mut packet.payload)?;
-
-        // Ignores other fields if mqtt has version 5
-        Ok(PubComp::new(packet_id))
-    }
-}
-
-impl Encode for PubComp {
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::PubComp, 0, self.payload_len());
-        header.encode(buf)?;
-        buf.put_u16(self.packet_id);
-        Ok(())
-    }
-
-    fn payload_len(&self) -> usize {
-        2
-    }
-
-    fn packet_len(&self) -> usize {
-        2 + 2 // Fixed header size + variable header size
-    }
-}
+// Implement encode
+util::id_packet_encode_impl!(PubComp, PacketType::PubComp);
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::codec::PacketCodec;
+    use crate::codec::{Decode, Encode};
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 

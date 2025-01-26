@@ -16,6 +16,7 @@ mod unsubscribe;
 pub use connack::*;
 pub use connect::*;
 pub use disconnect::*;
+pub use packet::*;
 pub use ping::*;
 pub use puback::*;
 pub use pubcomp::*;
@@ -26,5 +27,3 @@ pub use suback::*;
 pub use subscribe::*;
 pub use unsuback::*;
 pub use unsubscribe::*;
-
-pub use packet::*;

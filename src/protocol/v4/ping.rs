@@ -1,69 +1,23 @@
-use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use bytes::BytesMut;
+use crate::protocol::common::util;
+use crate::protocol::PacketType;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingReq {}
 
+util::header_packet_decode_impl!(PingReq, PacketType::PingReq);
+util::header_packet_encode_impl!(PingReq, PacketType::PingReq);
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingResp {}
 
-impl Decode for PingReq {
-    fn decode(packet: RawPacket) -> Result<Self, Error> {
-        if packet.header.packet_type() == PacketType::PingReq && packet.header.flags() == 0 {
-            Ok(PingReq::default())
-        } else {
-            Err(Error::MalformedPacket)
-        }
-    }
-}
-
-impl Encode for PingReq {
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::PingReq, 0, 0);
-        header.encode(buf)
-    }
-
-    fn payload_len(&self) -> usize {
-        0
-    }
-
-    fn packet_len(&self) -> usize {
-        2
-    }
-}
-
-impl Decode for PingResp {
-    fn decode(packet: RawPacket) -> Result<Self, Error> {
-        if packet.header.packet_type() == PacketType::PingResp && packet.header.flags() == 0 {
-            Ok(PingResp::default())
-        } else {
-            Err(Error::MalformedPacket)
-        }
-    }
-}
-
-impl Encode for PingResp {
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::PingResp, 0, 0);
-        header.encode(buf)
-    }
-
-    fn payload_len(&self) -> usize {
-        0
-    }
-
-    fn packet_len(&self) -> usize {
-        2
-    }
-}
+util::header_packet_decode_impl!(PingResp, PacketType::PingResp);
+util::header_packet_encode_impl!(PingResp, PacketType::PingResp);
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::codec::PacketCodec;
+    use crate::codec::{Decode, Encode};
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 

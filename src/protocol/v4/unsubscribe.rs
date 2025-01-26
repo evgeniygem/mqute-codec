@@ -1,50 +1,39 @@
-use crate::codec::util::{decode_string, decode_word, encode_string};
+use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use bytes::{Buf, BufMut, BytesMut};
-
-const UNSUBSCRIBE_FLAGS: u8 = 0b0010;
+use crate::protocol::{FixedHeader, PacketType};
+use crate::protocol::{Flags, TopicFilters};
+use crate::{Error, QoS};
+use bytes::{BufMut, BytesMut};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unsubscribe {
     packet_id: u16,
-    filters: Vec<String>,
+    filters: TopicFilters,
 }
 
 impl Unsubscribe {
-    pub fn new(packet_id: u16, filters: Vec<String>) -> Self {
-        if filters.is_empty() {
-            panic!("At least one topic is required");
-        }
-
+    pub fn new<T: IntoIterator<Item = String>>(packet_id: u16, filters: T) -> Self {
         if packet_id == 0 {
             panic!("Packet id is zero");
         }
 
-        Unsubscribe { packet_id, filters }
+        Unsubscribe {
+            packet_id,
+            filters: TopicFilters::new(filters),
+        }
     }
 }
 
 impl Decode for Unsubscribe {
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         if packet.header.packet_type() != PacketType::Unsubscribe
-            || packet.header.flags() != UNSUBSCRIBE_FLAGS
+            || packet.header.flags() != Flags::new(QoS::AtLeastOnce)
         {
             return Err(Error::MalformedPacket);
         }
 
         let packet_id = decode_word(&mut packet.payload)?;
-
-        let mut filters = Vec::with_capacity(1);
-        while packet.payload.has_remaining() {
-            filters.push(decode_string(&mut packet.payload)?);
-        }
-
-        if filters.is_empty() {
-            return Err(Error::NoSubscription);
-        }
+        let filters = TopicFilters::decode(&mut packet.payload)?;
 
         Ok(Unsubscribe::new(packet_id, filters))
     }
@@ -52,24 +41,21 @@ impl Decode for Unsubscribe {
 
 impl Encode for Unsubscribe {
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(
+        let header = FixedHeader::with_flags(
             PacketType::Unsubscribe,
-            UNSUBSCRIBE_FLAGS,
+            Flags::new(QoS::AtLeastOnce),
             self.payload_len(),
         );
         header.encode(buf)?;
 
         // Encode the packet id
         buf.put_u16(self.packet_id);
-
-        self.filters
-            .iter()
-            .for_each(|filter| encode_string(buf, filter));
+        self.filters.encode(buf);
         Ok(())
     }
 
     fn payload_len(&self) -> usize {
-        2 + self.filters.iter().fold(0, |acc, l| acc + 2 + l.len())
+        2 + self.filters.encoded_len()
     }
 }
 
@@ -82,13 +68,13 @@ mod tests {
 
     fn packet_data() -> &'static [u8] {
         &[
-            (PacketType::Unsubscribe as u8) << 4 | UNSUBSCRIBE_FLAGS, // Packet type
-            0x16,                                                     // Remaining len
-            0x12,                                                     // Packet ID
-            0x34,                                                     //
-            0x00,                                                     // Topic #1 len
-            0x0c,                                                     //
-            b'h',                                                     // Topic message
+            (PacketType::Unsubscribe as u8) << 4 | 0b0010, // Packet type
+            0x16,                                          // Remaining len
+            0x12,                                          // Packet ID
+            0x34,                                          //
+            0x00,                                          // Topic #1 len
+            0x0c,                                          //
+            b'h',                                          // Topic message
             b'e',
             b'l',
             b'l',

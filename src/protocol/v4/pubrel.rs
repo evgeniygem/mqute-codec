@@ -1,42 +1,20 @@
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use bytes::{BufMut, BytesMut};
+use crate::protocol::common::util;
+use crate::protocol::{FixedHeader, Flags, PacketType};
+use crate::{Error, QoS};
+use bytes::BufMut;
 
-const PUBREL_FLAGS: u8 = 0b0010;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct PubRel {
-    packet_id: u16,
-}
-
-impl PubRel {
-    pub fn new(packet_id: u16) -> Self {
-        PubRel { packet_id }
-    }
-}
-
-impl Decode for PubRel {
-    fn decode(mut packet: RawPacket) -> Result<Self, Error> {
-        // Validate header flags
-        if packet.header.packet_type() != PacketType::PubRel
-            || packet.header.flags() != PUBREL_FLAGS
-        {
-            return Err(Error::MalformedPacket);
-        }
-
-        let packet_id = decode_word(&mut packet.payload)?;
-
-        // Ignores other fields if mqtt has version 5
-        Ok(PubRel::new(packet_id))
-    }
-}
+// Create 'PubRel' packet
+util::id_packet!(PubRel);
 
 impl Encode for PubRel {
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::PubRel, PUBREL_FLAGS, self.payload_len());
+    fn encode(&self, buf: &mut bytes::BytesMut) -> Result<(), Error> {
+        let header = FixedHeader::with_flags(
+            PacketType::PubRel,
+            Flags::new(QoS::AtLeastOnce),
+            self.payload_len(),
+        );
         header.encode(buf)?;
 
         buf.put_u16(self.packet_id);
@@ -47,8 +25,20 @@ impl Encode for PubRel {
         2
     }
 
-    fn packet_len(&self) -> usize {
+    fn encoded_len(&self) -> usize {
         2 + 2 // Fixed header size + variable header size
+    }
+}
+
+impl Decode for PubRel {
+    fn decode(mut packet: RawPacket) -> Result<Self, Error> {
+        if packet.header.packet_type() != PacketType::PubRel
+            || packet.header.flags() != Flags::new(QoS::AtLeastOnce)
+        {
+            return Err(Error::MalformedPacket);
+        }
+        let packet_id = decode_word(&mut packet.payload)?;
+        Ok(PubRel::new(packet_id))
     }
 }
 
@@ -56,6 +46,7 @@ impl Encode for PubRel {
 mod tests {
     use super::*;
     use crate::codec::PacketCodec;
+    use crate::codec::{Decode, Encode};
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 
@@ -64,9 +55,9 @@ mod tests {
         let mut codec = PacketCodec::new(None, None);
 
         let data = &[
-            (PacketType::PubRel as u8) << 4 | PUBREL_FLAGS, // Packet type
-            0x02,                                           // Remaining len
-            0x12,                                           // Packet ID
+            (PacketType::PubRel as u8) << 4 | 0b0010, // Packet type
+            0x02,                                     // Remaining len
+            0x12,                                     // Packet ID
             0x34,
         ];
 
@@ -88,12 +79,7 @@ mod tests {
         packet.encode(&mut stream).unwrap();
         assert_eq!(
             stream,
-            vec![
-                (PacketType::PubRel as u8) << 4 | PUBREL_FLAGS,
-                0x02,
-                0x12,
-                0x34
-            ]
+            vec![(PacketType::PubRel as u8) << 4 | 0b0010, 0x02, 0x12, 0x34]
         );
     }
 }

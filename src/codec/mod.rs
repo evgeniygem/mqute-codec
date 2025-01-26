@@ -3,8 +3,8 @@ mod encode;
 mod raw_packet;
 pub mod util;
 
-use crate::error::Error;
-use crate::header::FixedHeader;
+use crate::protocol::FixedHeader;
+use crate::Error;
 use bytes::{Buf, BytesMut};
 use tokio_util::codec::{Decoder, Encoder};
 
@@ -47,8 +47,8 @@ where
 
     fn encode(&mut self, item: T, dst: &mut BytesMut) -> Result<(), Self::Error> {
         if let Some(max_size) = self.outbound_max_size {
-            if item.packet_len() > max_size {
-                return Err(Error::OutgoingPayloadSizeLimitExceeded(item.packet_len()));
+            if item.encoded_len() > max_size {
+                return Err(Error::OutgoingPayloadSizeLimitExceeded(item.encoded_len()));
             }
         }
 

@@ -1,54 +1,20 @@
-use crate::codec::util::decode_word;
-use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use bytes::{BufMut, BytesMut};
+use crate::protocol::common::util;
+use crate::protocol::PacketType;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct UnsubAck {
-    packet_id: u16,
-}
+// Create 'UnsubAck' packet
+util::id_packet!(UnsubAck);
 
-impl UnsubAck {
-    pub fn new(packet_id: u16) -> Self {
-        UnsubAck { packet_id }
-    }
-}
+// Implement decode
+util::id_packet_decode_impl!(UnsubAck, PacketType::UnsubAck);
 
-impl Decode for UnsubAck {
-    fn decode(mut packet: RawPacket) -> Result<Self, Error> {
-        if packet.header.packet_type() != PacketType::UnsubAck || packet.header.flags() != 0 {
-            return Err(Error::MalformedPacket);
-        }
-        let packet_id = decode_word(&mut packet.payload)?;
-
-        // Ignores other fields if mqtt has version 5
-        Ok(UnsubAck::new(packet_id))
-    }
-}
-
-impl Encode for UnsubAck {
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::UnsubAck, 0, self.payload_len());
-        header.encode(buf)?;
-        buf.put_u16(self.packet_id);
-        Ok(())
-    }
-
-    fn payload_len(&self) -> usize {
-        2
-    }
-
-    fn packet_len(&self) -> usize {
-        2 + 2 // Fixed header size + variable header size
-    }
-}
+// Implement encode
+util::id_packet_encode_impl!(UnsubAck, PacketType::UnsubAck);
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::codec::PacketCodec;
+    use crate::codec::{Decode, Encode};
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 

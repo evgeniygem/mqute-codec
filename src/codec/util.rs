@@ -1,9 +1,9 @@
-use crate::error::Error;
+use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 const PAYLOAD_MAX_SIZE: usize = 268_435_455;
 
-pub fn decode_byte(buf: &mut Bytes) -> Result<u8, Error> {
+pub(crate) fn decode_byte(buf: &mut Bytes) -> Result<u8, Error> {
     if buf.is_empty() {
         return Err(Error::MalformedPacket);
     }
@@ -12,7 +12,7 @@ pub fn decode_byte(buf: &mut Bytes) -> Result<u8, Error> {
     Ok(buf.get_u8())
 }
 
-pub fn decode_word(buf: &mut Bytes) -> Result<u16, Error> {
+pub(crate) fn decode_word(buf: &mut Bytes) -> Result<u16, Error> {
     if buf.len() < 2 {
         return Err(Error::MalformedPacket);
     }
@@ -21,7 +21,7 @@ pub fn decode_word(buf: &mut Bytes) -> Result<u16, Error> {
     Ok(buf.get_u16())
 }
 
-pub fn decode_bytes(buf: &mut Bytes) -> Result<Bytes, Error> {
+pub(crate) fn decode_bytes(buf: &mut Bytes) -> Result<Bytes, Error> {
     let len = decode_word(buf)? as usize;
     if len > buf.len() {
         return Err(Error::OutOfBounds);
@@ -30,21 +30,21 @@ pub fn decode_bytes(buf: &mut Bytes) -> Result<Bytes, Error> {
     Ok(buf.split_to(len))
 }
 
-pub fn decode_string(buf: &mut Bytes) -> Result<String, Error> {
+pub(crate) fn decode_string(buf: &mut Bytes) -> Result<String, Error> {
     let bytes = decode_bytes(buf)?;
     String::from_utf8(bytes.to_vec()).map_err(|_| Error::InvalidUtf8)
 }
 
-pub fn encode_bytes(buf: &mut BytesMut, bytes: &[u8]) {
+pub(crate) fn encode_bytes(buf: &mut BytesMut, bytes: &[u8]) {
     buf.put_u16(bytes.len() as u16);
     buf.extend_from_slice(bytes);
 }
 
-pub fn encode_string<T: AsRef<str>>(buf: &mut BytesMut, s: T) {
+pub(crate) fn encode_string<T: AsRef<str>>(buf: &mut BytesMut, s: T) {
     encode_bytes(buf, s.as_ref().as_bytes());
 }
 
-pub fn encode_remaining_length(buf: &mut BytesMut, len: usize) -> Result<(), Error> {
+pub(crate) fn encode_remaining_length(buf: &mut BytesMut, len: usize) -> Result<(), Error> {
     if len > PAYLOAD_MAX_SIZE {
         return Err(Error::PayloadTooLarge);
     }
@@ -66,7 +66,7 @@ pub fn encode_remaining_length(buf: &mut BytesMut, len: usize) -> Result<(), Err
     Ok(())
 }
 
-pub fn decode_remaining_length(buf: &[u8]) -> Result<usize, Error> {
+pub(crate) fn decode_remaining_length(buf: &[u8]) -> Result<usize, Error> {
     let mut len: usize = 0;
     let mut done = false;
     let mut shift = 0;

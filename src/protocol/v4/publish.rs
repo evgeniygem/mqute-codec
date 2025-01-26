@@ -1,56 +1,32 @@
-use crate::codec::util::{decode_string, decode_word, encode_string};
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use crate::qos::QoS;
-use bit_field::BitField;
-use bytes::{BufMut, Bytes, BytesMut};
+use crate::protocol::variable::PublishHeader;
+use crate::protocol::{FixedHeader, Flags, PacketType};
+use crate::Error;
+use crate::QoS;
+use bytes::{Bytes, BytesMut};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Publish {
-    topic: String,
+    header: PublishHeader,
     payload: Bytes,
-    packet_id: u16,
     qos: QoS,
     dup: bool,
     retain: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum Flag {
-    Retain = 0,
-    QosBegin = 1,
-    QosEnd = 2,
-    Dup = 3,
-}
-
 impl Publish {
-    pub fn new<T: Into<String>>(topic: T, payload: Bytes, qos: QoS, packet_id: u16) -> Self {
-        if qos != QoS::AtMostOnce && packet_id == 0 {
-            panic!("Packet id is zero at QoS > 0");
-        }
-
-        if qos == QoS::AtMostOnce && packet_id != 0 {
-            panic!("Packet id is non-zero at QoS = 0");
+    pub fn new<T: Into<String>>(topic: T, payload: Bytes, packet_id: u16, flags: Flags) -> Self {
+        if flags.qos != QoS::AtMostOnce && packet_id == 0 {
+            panic!("Control packets must contain a non-zero packet identifier at QoS > 0");
         }
 
         Publish {
-            topic: topic.into(),
+            header: PublishHeader::new(topic, packet_id),
             payload,
-            packet_id,
-            qos,
-            dup: false,
-            retain: false,
+            qos: flags.qos,
+            dup: flags.dup,
+            retain: flags.retain,
         }
-    }
-
-    pub fn set_dup(&mut self, flag: bool) {
-        self.dup = flag;
-    }
-
-    pub fn set_retain(&mut self, flag: bool) {
-        self.retain = flag;
     }
 }
 
@@ -62,29 +38,14 @@ impl Decode for Publish {
 
         let flags = packet.header.flags();
 
-        let qos_range = (Flag::QosBegin as usize)..=(Flag::QosEnd as usize);
-
-        let retain = flags.get_bit(Flag::Retain as usize);
-        let qos: QoS = flags.get_bits(qos_range).try_into()?;
-        let dup = flags.get_bit(Flag::Dup as usize);
-        let topic = decode_string(&mut packet.payload)?;
-
-        let packet_id = match qos {
-            QoS::AtMostOnce => 0,
-            QoS::AtLeastOnce | QoS::ExactlyOnce => decode_word(&mut packet.payload)?,
-        };
-
-        if qos != QoS::AtMostOnce && packet_id == 0 {
-            return Err(Error::MalformedPacket);
-        }
+        let publish_header = PublishHeader::decode(&mut packet.payload, flags.qos)?;
 
         let packet = Publish {
-            topic,
+            header: publish_header,
             payload: packet.payload,
-            packet_id,
-            qos,
-            dup,
-            retain,
+            qos: flags.qos,
+            dup: flags.dup,
+            retain: flags.retain,
         };
         Ok(packet)
     }
@@ -92,38 +53,24 @@ impl Decode for Publish {
 
 impl Encode for Publish {
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let mut flags = 0u8;
+        let flags = Flags {
+            dup: self.dup,
+            qos: self.qos,
+            retain: self.retain,
+        };
 
-        // Update the 'Retain' flag
-        flags.set_bit(Flag::Retain as usize, self.retain);
-
-        let qos_range = (Flag::QosBegin as usize)..=(Flag::QosEnd as usize);
-
-        // Update 'Qos' flags
-        flags.set_bits(qos_range, self.qos as u8);
-
-        // Update the 'dup' flag
-        flags.set_bit(Flag::Dup as usize, self.dup);
-
-        let header = FixedHeader::new(PacketType::Publish, flags, self.payload_len());
+        let header = FixedHeader::with_flags(PacketType::Publish, flags, self.payload_len());
         header.encode(buf)?;
+        self.header.encode(buf, self.qos);
 
-        encode_string(buf, &self.topic);
-
-        // The Packet Identifier field is only present in PUBLISH Packets where
-        // the QoS level is 1 or 2
-        if self.qos != QoS::AtMostOnce {
-            // 'packet_id' is non-zero
-            buf.put_u16(self.packet_id);
-        }
-
+        // Append message
         buf.extend_from_slice(&self.payload);
         Ok(())
     }
 
     fn payload_len(&self) -> usize {
         let packet_id_len = if self.qos == QoS::AtMostOnce { 0 } else { 2 };
-        2 + self.topic.len() + self.payload.len() + packet_id_len
+        2 + self.header.topic.len() + self.payload.len() + packet_id_len
     }
 }
 
@@ -131,6 +78,7 @@ impl Encode for Publish {
 mod tests {
     use super::*;
     use crate::codec::PacketCodec;
+    use crate::QoS;
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 
@@ -169,8 +117,8 @@ mod tests {
             Publish::new(
                 "/test",
                 Bytes::copy_from_slice(&payload),
-                QoS::ExactlyOnce,
-                0x1234
+                0x1234,
+                Flags::new(QoS::ExactlyOnce)
             )
         );
     }
@@ -181,8 +129,8 @@ mod tests {
         let packet = Publish::new(
             "/test",
             Bytes::copy_from_slice(&payload),
-            QoS::ExactlyOnce,
             0x1234,
+            Flags::new(QoS::ExactlyOnce),
         );
 
         let mut stream = BytesMut::new();

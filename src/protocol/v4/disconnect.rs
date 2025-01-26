@@ -1,42 +1,17 @@
-use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use bytes::BytesMut;
+use crate::protocol::common::util;
+use crate::protocol::PacketType;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Disconnect {}
 
-impl Decode for Disconnect {
-    fn decode(packet: RawPacket) -> Result<Self, Error> {
-        if packet.header.packet_type() == PacketType::Disconnect && packet.header.flags() == 0 {
-            Ok(Disconnect::default())
-        } else {
-            Err(Error::MalformedPacket)
-        }
-    }
-}
-
-impl Encode for Disconnect {
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::Disconnect, 0, 0);
-        header.encode(buf)
-    }
-
-    fn packet_len(&self) -> usize {
-        2
-    }
-
-    fn payload_len(&self) -> usize {
-        // No payload
-        0
-    }
-}
+util::header_packet_decode_impl!(Disconnect, PacketType::Disconnect);
+util::header_packet_encode_impl!(Disconnect, PacketType::Disconnect);
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::codec::PacketCodec;
+    use crate::codec::{Decode, Encode};
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 

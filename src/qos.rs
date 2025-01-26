@@ -21,3 +21,9 @@ impl TryFrom<u8> for QoS {
         }
     }
 }
+
+impl Into<u8> for QoS {
+    fn into(self) -> u8 {
+        self as u8
+    }
+}

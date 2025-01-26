@@ -1,10 +1,81 @@
-use crate::codec::util::decode_word;
-use crate::codec::{Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
-use crate::qos::QoS;
-use bytes::{Buf, BufMut, BytesMut};
+use crate::Error;
+use crate::QoS;
+
+pub(crate) mod inner {
+    use crate::codec::util::decode_word;
+    use crate::codec::{Decode, Encode, RawPacket};
+    use crate::protocol::payload::Codes;
+    use crate::protocol::{FixedHeader, PacketType};
+    use crate::Error;
+    use bytes::{BufMut, BytesMut};
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub(crate) struct SubAck<T> {
+        packet_id: u16,
+        codes: Codes<T>,
+    }
+
+    impl<T> SubAck<T>
+    where
+        T: TryFrom<u8, Error = Error> + Into<u8> + Copy,
+    {
+        pub fn new<I: IntoIterator<Item = T>>(packet_id: u16, codes: I) -> Self {
+            if packet_id == 0 {
+                panic!("Packet id is zero");
+            }
+
+            let codes: Codes<T> = Codes::new(codes);
+
+            SubAck { packet_id, codes }
+        }
+
+        pub fn codes(&self) -> Codes<T> {
+            self.codes.clone()
+        }
+
+        pub fn packet_id(&self) -> u16 {
+            self.packet_id
+        }
+    }
+    impl<T> Decode for SubAck<T>
+    where
+        T: TryFrom<u8, Error = Error> + Into<u8> + Copy,
+    {
+        fn decode(mut packet: RawPacket) -> Result<Self, Error> {
+            if packet.header.packet_type() != PacketType::SubAck
+                || !packet.header.flags().is_default()
+            {
+                return Err(Error::MalformedPacket);
+            }
+
+            let packet_id = decode_word(&mut packet.payload)?;
+
+            // 'remaining len' is always at least 2
+            let codes: Codes<T> =
+                Codes::decode(&mut packet.payload, packet.header.remaining_len() - 2)?;
+
+            Ok(SubAck { packet_id, codes })
+        }
+    }
+
+    impl<T> Encode for SubAck<T>
+    where
+        T: TryFrom<u8, Error = Error> + Into<u8> + Copy,
+    {
+        fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
+            let header = FixedHeader::new(PacketType::SubAck, self.payload_len());
+            header.encode(buf)?;
+
+            buf.put_u16(self.packet_id);
+            self.codes.encode(buf);
+            Ok(())
+        }
+
+        fn payload_len(&self) -> usize {
+            2 + self.codes.len()
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReturnCode {
@@ -28,65 +99,22 @@ impl TryFrom<u8> for ReturnCode {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SubAck {
-    packet_id: u16,
-    codes: Vec<ReturnCode>,
-}
-
-impl SubAck {
-    pub fn new(packet_id: u16, codes: Vec<ReturnCode>) -> Self {
-        SubAck { packet_id, codes }
-    }
-}
-
-impl Decode for SubAck {
-    fn decode(mut packet: RawPacket) -> Result<Self, Error> {
-        if packet.header.packet_type() != PacketType::SubAck || packet.header.flags() != 0 {
-            return Err(Error::MalformedPacket);
+impl Into<u8> for ReturnCode {
+    fn into(self) -> u8 {
+        match self {
+            ReturnCode::Success(qos) => qos as u8,
+            ReturnCode::Failure => 0x80,
         }
-
-        let packet_id = decode_word(&mut packet.payload)?;
-
-        // 'remaining len' is always at least 2
-        let mut codes = Vec::with_capacity(packet.header.remaining_len() - 2);
-        while packet.payload.has_remaining() {
-            codes.push(packet.payload.get_u8().try_into()?);
-        }
-
-        if codes.is_empty() {
-            return Err(Error::NoSubscription);
-        }
-
-        Ok(SubAck::new(packet_id, codes))
     }
 }
 
-impl Encode for SubAck {
-    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::SubAck, 0, self.payload_len());
-        header.encode(buf)?;
-
-        buf.put_u16(self.packet_id);
-        self.codes.iter().for_each(|&code| {
-            let value = match code {
-                ReturnCode::Success(qos) => qos as u8,
-                ReturnCode::Failure => 0x80,
-            };
-            buf.put_u8(value);
-        });
-        Ok(())
-    }
-
-    fn payload_len(&self) -> usize {
-        2 + self.codes.len()
-    }
-}
+pub type SubAck = inner::SubAck<ReturnCode>;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codec::PacketCodec;
+    use crate::codec::{Decode, Encode, PacketCodec};
+    use crate::protocol::PacketType;
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 

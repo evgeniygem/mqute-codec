@@ -1,4 +1,4 @@
-use crate::header::FixedHeader;
+use crate::protocol::FixedHeader;
 use bytes::Bytes;
 
 pub struct RawPacket {

@@ -31,11 +31,14 @@ pub enum Error {
     #[error("Malformed packet")]
     MalformedPacket,
 
-    #[error("The payload of a Subscribe packet must contain at least one topic filter / QoS pair")]
-    NoSubscription,
+    #[error("The payload of packet must contain at least one return code")]
+    NoCodes,
 
     #[error("At least there are not enough {0} bytes to frame the packet")]
     NotEnoughBytes(usize),
+
+    #[error("The payload of packet must contain at least one topic filter")]
+    NoTopic,
 
     #[error("Outgoing payload size limit exceeded: {0}")]
     OutgoingPayloadSizeLimitExceeded(usize),
@@ -51,6 +54,12 @@ pub enum Error {
 
     #[error("Payload size limit exceeded: {0}")]
     PayloadSizeLimitExceeded(usize),
+
+    #[error("Protocol mismatch")]
+    ProtocolMismatch,
+
+    #[error("Protocol not supported")]
+    ProtocolNotSupported,
 
     #[error("String too long")]
     StringTooLong,

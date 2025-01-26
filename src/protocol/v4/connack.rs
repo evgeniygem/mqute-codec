@@ -1,17 +1,11 @@
-use crate::codec::{util::decode_byte, Decode, Encode, RawPacket};
-use crate::error::Error;
-use crate::header::FixedHeader;
-use crate::packet::PacketType;
+use crate::codec::util::decode_byte;
+use crate::codec::{Decode, Encode, RawPacket};
+use crate::protocol::{FixedHeader, PacketType};
+use crate::Error;
 use bit_field::BitField;
 use bytes::{BufMut, BytesMut};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ConnAck {
-    code: ConnectReturnCode,
-    session_present: bool,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u8)]
 pub enum ConnectReturnCode {
     // Connection Accepted
@@ -51,6 +45,18 @@ impl TryFrom<u8> for ConnectReturnCode {
     }
 }
 
+impl Into<u8> for ConnectReturnCode {
+    fn into(self) -> u8 {
+        self as u8
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct ConnAck {
+    code: ConnectReturnCode,
+    session_present: bool,
+}
+
 impl ConnAck {
     fn new(code: ConnectReturnCode, session_present: bool) -> Self {
         ConnAck {
@@ -62,35 +68,36 @@ impl ConnAck {
 
 impl Decode for ConnAck {
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
-        if packet.header.packet_type() != PacketType::ConnAck || packet.header.flags() != 0 {
+        if packet.header.packet_type() != PacketType::ConnAck || !packet.header.flags().is_default()
+        {
             return Err(Error::MalformedPacket);
         }
 
         let conn_ack_flag = decode_byte(&mut packet.payload)?;
         let ret_code = decode_byte(&mut packet.payload)?;
-
         let code = ret_code.try_into()?;
-
         let session_present = conn_ack_flag.get_bit(0);
-        Ok(ConnAck::new(code, session_present))
+
+        Ok(ConnAck {
+            code,
+            session_present,
+        })
     }
 }
 
 impl Encode for ConnAck {
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let header = FixedHeader::new(PacketType::ConnAck, 0, self.payload_len());
+        let header = FixedHeader::new(PacketType::ConnAck, self.payload_len());
         header.encode(buf)?;
 
         let mut flags = 0u8;
-
         flags.set_bit(0, self.session_present);
 
         // Write a session present flag
         buf.put_u8(flags);
 
         // Write a connect return code
-        buf.put_u8(self.code as u8);
-
+        buf.put_u8(self.code.into());
         Ok(())
     }
 
@@ -98,7 +105,7 @@ impl Encode for ConnAck {
         2
     }
 
-    fn packet_len(&self) -> usize {
+    fn encoded_len(&self) -> usize {
         2 + 2 // Fixed header + payload
     }
 }

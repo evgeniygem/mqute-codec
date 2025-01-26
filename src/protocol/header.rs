@@ -1,8 +1,40 @@
-use crate::error::Error;
-use crate::packet::PacketType;
-use crate::util::build_control_byte;
-use crate::{codec, util};
+use crate::protocol::util;
+use crate::protocol::PacketType;
+use crate::Error;
+use crate::{codec, QoS};
 use bytes::{Buf, BufMut, BytesMut};
+use std::cmp::PartialEq;
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct Flags {
+    pub dup: bool,
+    pub qos: QoS,
+    pub retain: bool,
+}
+
+impl Default for Flags {
+    fn default() -> Self {
+        Flags {
+            dup: false,
+            qos: QoS::AtMostOnce,
+            retain: false,
+        }
+    }
+}
+
+impl Flags {
+    pub fn new(qos: QoS) -> Self {
+        Flags {
+            dup: false,
+            qos,
+            retain: false,
+        }
+    }
+
+    pub fn is_default(&self) -> bool {
+        *self == Self::default()
+    }
+}
 
 pub(crate) struct FixedHeader {
     control_byte: u8,
@@ -10,8 +42,8 @@ pub(crate) struct FixedHeader {
 }
 
 impl FixedHeader {
-    pub fn new(packet: PacketType, flags: u8, remaining_len: usize) -> Self {
-        let control_byte = build_control_byte(packet, flags);
+    pub fn new(packet: PacketType, remaining_len: usize) -> Self {
+        let control_byte = build_control_byte(packet, Flags::default());
 
         FixedHeader {
             control_byte,
@@ -21,7 +53,7 @@ impl FixedHeader {
 
     pub fn try_from(control_byte: u8, remaining_len: usize) -> Result<Self, Error> {
         // Packet type check
-        let _: PacketType = util::fetch_packet_type(control_byte).try_into()?;
+        let _: PacketType = fetch_packet_type(control_byte).try_into()?;
 
         Ok(FixedHeader {
             control_byte,
@@ -29,14 +61,25 @@ impl FixedHeader {
         })
     }
 
-    pub fn packet_type(&self) -> PacketType {
-        util::fetch_packet_type(self.control_byte)
-            .try_into()
-            .unwrap()
+    pub fn with_flags(packet_type: PacketType, flags: Flags, remaining_len: usize) -> Self {
+        let control_byte = build_control_byte(packet_type, flags);
+        FixedHeader {
+            control_byte,
+            remaining_len,
+        }
     }
 
-    pub fn flags(&self) -> u8 {
-        util::fetch_flags(self.control_byte)
+    pub fn packet_type(&self) -> PacketType {
+        fetch_packet_type(self.control_byte).try_into().unwrap()
+    }
+
+    pub fn flags(&self) -> Flags {
+        let flags = self.control_byte & 0x0F;
+        let dup: bool = (flags & 0x08) != 0;
+        let qos = ((flags >> 1) & 0x03).try_into().unwrap();
+        let retain = flags & 0x01 != 0;
+
+        Flags { dup, qos, retain }
     }
 
     pub fn remaining_len(&self) -> usize {
@@ -83,4 +126,15 @@ impl FixedHeader {
 
         Ok(header)
     }
+}
+
+#[inline]
+fn fetch_packet_type(control_byte: u8) -> u8 {
+    control_byte >> 4
+}
+
+const fn build_control_byte(packet_type: PacketType, flags: Flags) -> u8 {
+    let byte = (packet_type as u8) << 4;
+    let flags = (flags.dup as u8) << 3 | (flags.qos as u8) << 1 | (flags.retain as u8) << 0;
+    byte | flags
 }

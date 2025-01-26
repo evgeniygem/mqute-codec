@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PacketType {
