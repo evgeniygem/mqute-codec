@@ -1,7 +1,7 @@
-use crate::protocol;
+use crate::protocol::common::suback;
 use crate::QoS;
 
-pub type SubAck = protocol::v4::inner::SubAck<QoS>;
+suback!(SubAck, QoS);
 
 #[cfg(test)]
 mod tests {

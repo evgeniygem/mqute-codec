@@ -1,6 +1,6 @@
-mod codec;
+pub mod codec;
 mod error;
-mod protocol;
+pub mod protocol;
 mod qos;
 
 pub use error::Error;

@@ -1,7 +1,7 @@
-use crate::protocol::common::connect_impl;
+use crate::protocol::common::connect;
 use crate::protocol::Protocol;
 
-connect_impl!(Connect, Protocol::V4);
+connect!(Connect, Protocol::V4);
 
 #[cfg(test)]
 mod tests {

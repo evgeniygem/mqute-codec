@@ -36,6 +36,7 @@ impl Flags {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct FixedHeader {
     control_byte: u8,
     remaining_len: usize,
