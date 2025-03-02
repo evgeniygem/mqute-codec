@@ -4,10 +4,10 @@ use crate::codec::util::{
     decode_byte, decode_bytes, decode_string, decode_variable_integer, encode_bytes, encode_string,
     encode_variable_integer,
 };
-use crate::protocol::common::frame::{ConnectFrame, WillFrame};
-use crate::protocol::common::{connect, ConnectHeader};
+use crate::protocol::common::{connect, Auth, ConnectHeader};
+use crate::protocol::common::{ConnectFrame, WillFrame};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{Auth, Protocol};
+use crate::protocol::Protocol;
 use crate::{Error, QoS};
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};

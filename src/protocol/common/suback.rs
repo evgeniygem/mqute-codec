@@ -5,7 +5,7 @@ macro_rules! suback {
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct SubAck {
             packet_id: u16,
-            codes: $crate::protocol::payload::Codes<$code>,
+            codes: $crate::protocol::Codes<$code>,
         }
 
         impl SubAck {
@@ -14,12 +14,12 @@ macro_rules! suback {
                     panic!("Packet id is zero");
                 }
 
-                let codes = $crate::protocol::payload::Codes::new(codes);
+                let codes = $crate::protocol::Codes::new(codes);
 
                 SubAck { packet_id, codes }
             }
 
-            pub fn codes(&self) -> $crate::protocol::payload::Codes<$code> {
+            pub fn codes(&self) -> $crate::protocol::Codes<$code> {
                 self.codes.clone()
             }
 
@@ -38,7 +38,7 @@ macro_rules! suback {
                 let packet_id = $crate::codec::util::decode_word(&mut packet.payload)?;
 
                 // 'remaining len' is always at least 2
-                let codes = $crate::protocol::payload::Codes::decode(&mut packet.payload)?;
+                let codes = $crate::protocol::Codes::decode(&mut packet.payload)?;
 
                 Ok(SubAck { packet_id, codes })
             }

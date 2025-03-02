@@ -1,7 +1,6 @@
 mod common;
 mod header;
 mod packet;
-mod payload;
 pub(crate) mod util;
 mod version;
 
@@ -12,6 +11,7 @@ pub mod v5;
 pub(crate) use header::FixedHeader;
 pub(crate) use packet::PacketType;
 
+pub use common::payload::*;
+pub use common::Auth;
 pub use header::Flags;
-pub use payload::*;
 pub use version::*;

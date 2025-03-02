@@ -1,6 +1,6 @@
 use crate::codec::util::{decode_bytes, decode_string, encode_bytes, encode_string};
-use crate::protocol::common::frame::{ConnectFrame, WillFrame};
 use crate::protocol::common::{connect, ConnectHeader};
+use crate::protocol::common::{ConnectFrame, WillFrame};
 use crate::protocol::Protocol;
 use crate::{Error, QoS};
 use bit_field::BitField;
