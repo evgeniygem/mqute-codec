@@ -1,3 +1,4 @@
+/// Get the length of remaining bytes
 #[inline]
 pub(crate) fn len_bytes(len: usize) -> usize {
     if len < 128 {
