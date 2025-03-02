@@ -1,7 +1,7 @@
 use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, Flags, PacketType};
-use crate::{Error, QoS};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
+use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 
@@ -175,7 +175,7 @@ impl Encode for Subscribe {
 mod tests {
     use super::*;
     use crate::codec::PacketCodec;
-    use crate::QoS;
+    use crate::protocol::QoS;
     use bytes::BytesMut;
     use tokio_util::codec::Decoder;
 

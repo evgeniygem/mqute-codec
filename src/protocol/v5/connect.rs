@@ -7,8 +7,8 @@ use crate::codec::util::{
 use crate::protocol::common::{connect, Auth, ConnectHeader};
 use crate::protocol::common::{ConnectFrame, WillFrame};
 use crate::protocol::util::len_bytes;
-use crate::protocol::Protocol;
-use crate::{Error, QoS};
+use crate::protocol::{Protocol, QoS};
+use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
 use std::ops::RangeInclusive;

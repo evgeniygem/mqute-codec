@@ -7,8 +7,8 @@ use crate::protocol::v5::property::{
     property_decode, property_encode, property_len, Property, PropertyFrame,
 };
 use crate::protocol::v5::util::id_header;
-use crate::protocol::{FixedHeader, Flags, PacketType};
-use crate::{Error, QoS};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
+use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 

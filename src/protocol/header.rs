@@ -1,7 +1,6 @@
 use crate::protocol::util;
-use crate::protocol::PacketType;
+use crate::protocol::{PacketType, QoS};
 use crate::Error;
-use crate::{codec, QoS};
 use bytes::{Buf, BufMut, BytesMut};
 use std::cmp::PartialEq;
 

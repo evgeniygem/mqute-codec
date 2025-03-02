@@ -1,8 +1,7 @@
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, PacketType};
-use crate::protocol::{Flags, TopicFilters};
-use crate::{Error, QoS};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters};
+use crate::Error;
 use bytes::{BufMut, BytesMut};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

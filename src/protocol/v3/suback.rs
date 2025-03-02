@@ -1,5 +1,5 @@
 use crate::protocol::common::suback;
-use crate::QoS;
+use crate::protocol::QoS;
 
 suback!(SubAck, QoS);
 

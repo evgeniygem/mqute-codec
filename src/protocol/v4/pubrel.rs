@@ -1,8 +1,8 @@
 use super::util;
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, Flags, PacketType};
-use crate::{Error, QoS};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
+use crate::Error;
 use bytes::BufMut;
 
 // Create 'PubRel' packet
