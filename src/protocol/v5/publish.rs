@@ -2,8 +2,8 @@ use super::property::{property_decode, property_encode, property_len, Property, 
 use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_integer};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{common, FixedHeader, Flags, PacketType};
-use crate::{Error, QoS};
+use crate::protocol::{common, FixedHeader, Flags, PacketType, QoS};
+use crate::Error;
 use bytes::{Buf, Bytes, BytesMut};
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]

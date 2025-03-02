@@ -2,8 +2,7 @@ use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::v5::util::{
     ack, ack_decode_impl, ack_encode_impl, ack_properties, ack_properties_frame_impl,
 };
-use crate::protocol::{Flags, PacketType};
-use crate::QoS;
+use crate::protocol::{Flags, PacketType, QoS};
 
 fn validate_pubrel_reason_code(code: ReasonCode) -> bool {
     matches!(code.into(), 0 | 146)

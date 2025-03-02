@@ -6,8 +6,8 @@ use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_i
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
 use crate::protocol::v5::reason::ReasonCode;
-use crate::protocol::{FixedHeader, PacketType};
-use crate::{Error, QoS};
+use crate::protocol::{FixedHeader, PacketType, QoS};
+use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 

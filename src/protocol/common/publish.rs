@@ -1,5 +1,6 @@
 use crate::codec::util::{decode_string, decode_word, encode_string};
-use crate::{Error, QoS};
+use crate::protocol::QoS;
+use crate::Error;
 use bytes::{BufMut, Bytes, BytesMut};
 
 #[derive(Debug, Clone, PartialEq, Eq)]

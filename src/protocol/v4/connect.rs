@@ -1,8 +1,8 @@
 use crate::codec::util::{decode_bytes, decode_string, encode_bytes, encode_string};
-use crate::protocol::common::frame::{ConnectFrame, WillFrame};
 use crate::protocol::common::{connect, ConnectHeader};
-use crate::protocol::Protocol;
-use crate::{Error, QoS};
+use crate::protocol::common::{ConnectFrame, WillFrame};
+use crate::protocol::{Protocol, QoS};
+use crate::Error;
 use bit_field::BitField;
 use bytes::{Bytes, BytesMut};
 use std::ops::RangeInclusive;

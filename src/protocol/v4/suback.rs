@@ -1,7 +1,6 @@
 use crate::protocol::common::suback;
-
+use crate::protocol::QoS;
 use crate::Error;
-use crate::QoS;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReturnCode {

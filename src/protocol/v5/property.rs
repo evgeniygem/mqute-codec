@@ -3,7 +3,8 @@ use crate::codec::util::{
     encode_bytes, encode_string, encode_variable_integer,
 };
 use crate::protocol::util::len_bytes;
-use crate::{Error, QoS};
+use crate::protocol::QoS;
+use crate::Error;
 use bytes::{BufMut, Bytes, BytesMut};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
