@@ -1,7 +1,7 @@
 use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
-const PAYLOAD_MAX_SIZE: usize = 268_435_455;
+const PAYLOAD_MAX_SIZE: u32 = 268_435_455;
 
 pub(crate) fn decode_byte(buf: &mut Bytes) -> Result<u8, Error> {
     if buf.is_empty() {
@@ -19,6 +19,15 @@ pub(crate) fn decode_word(buf: &mut Bytes) -> Result<u16, Error> {
 
     // Big endian
     Ok(buf.get_u16())
+}
+
+pub(crate) fn decode_dword(buf: &mut Bytes) -> Result<u32, Error> {
+    if buf.len() < 4 {
+        return Err(Error::MalformedPacket);
+    }
+
+    // Big endian
+    Ok(buf.get_u32())
 }
 
 pub(crate) fn decode_bytes(buf: &mut Bytes) -> Result<Bytes, Error> {
@@ -44,13 +53,13 @@ pub(crate) fn encode_string<T: AsRef<str>>(buf: &mut BytesMut, s: T) {
     encode_bytes(buf, s.as_ref().as_bytes());
 }
 
-pub(crate) fn encode_remaining_length(buf: &mut BytesMut, len: usize) -> Result<(), Error> {
-    if len > PAYLOAD_MAX_SIZE {
+pub(crate) fn encode_variable_integer(buf: &mut BytesMut, value: u32) -> Result<(), Error> {
+    if value > PAYLOAD_MAX_SIZE {
         return Err(Error::PayloadTooLarge);
     }
 
     let mut done = false;
-    let mut x = len;
+    let mut x = value;
 
     while !done {
         let mut byte = (x % 128) as u8;
@@ -66,14 +75,13 @@ pub(crate) fn encode_remaining_length(buf: &mut BytesMut, len: usize) -> Result<
     Ok(())
 }
 
-pub(crate) fn decode_remaining_length(buf: &[u8]) -> Result<usize, Error> {
-    let mut len: usize = 0;
+pub(crate) fn decode_variable_integer(buf: &[u8]) -> Result<u32, Error> {
+    let mut value = 0u32;
     let mut done = false;
     let mut shift = 0;
 
-    for &value in buf {
-        let byte = value as usize;
-        len += (byte & 0x7F) << shift;
+    for &byte in buf {
+        value += (byte as u32 & 0x7F) << shift;
 
         // stop when continue bit is 0
         done = (byte & 0x80) == 0;
@@ -84,14 +92,14 @@ pub(crate) fn decode_remaining_length(buf: &[u8]) -> Result<usize, Error> {
         shift += 7;
 
         if shift > 21 {
-            return Err(Error::MalformedRemainingLength);
+            return Err(Error::MalformedVariableByteInteger);
         }
     }
 
-    // Not enough bytes to frame remaining length
+    // Not enough bytes to decode variable byte integer
     if !done {
         return Err(Error::NotEnoughBytes(1));
     }
 
-    Ok(len)
+    Ok(value)
 }

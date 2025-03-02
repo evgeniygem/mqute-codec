@@ -38,10 +38,7 @@ macro_rules! suback {
                 let packet_id = $crate::codec::util::decode_word(&mut packet.payload)?;
 
                 // 'remaining len' is always at least 2
-                let codes = $crate::protocol::payload::Codes::decode(
-                    &mut packet.payload,
-                    packet.header.remaining_len() - 2,
-                )?;
+                let codes = $crate::protocol::payload::Codes::decode(&mut packet.payload)?;
 
                 Ok(SubAck { packet_id, codes })
             }

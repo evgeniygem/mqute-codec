@@ -51,10 +51,6 @@ impl Encode for ConnAck {
     fn payload_len(&self) -> usize {
         2
     }
-
-    fn encoded_len(&self) -> usize {
-        2 + 2 // Fixed header + payload
-    }
 }
 
 #[cfg(test)]

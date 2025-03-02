@@ -3,11 +3,11 @@ mod header;
 mod packet;
 mod payload;
 pub(crate) mod util;
-mod variable;
 mod version;
 
 pub mod v3;
 pub mod v4;
+pub mod v5;
 
 pub(crate) use header::FixedHeader;
 pub(crate) use packet::PacketType;

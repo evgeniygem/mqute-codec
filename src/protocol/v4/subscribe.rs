@@ -1,9 +1,122 @@
-use crate::codec::util::decode_word;
+use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::{FixedHeader, Flags, PacketType};
-use crate::protocol::{TopicQosFilter, TopicQosFilters};
 use crate::{Error, QoS};
-use bytes::{BufMut, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
+use std::borrow::Borrow;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TopicQosFilter {
+    pub topic: String,
+    pub qos: QoS,
+}
+
+impl TopicQosFilter {
+    pub fn new<T: Into<String>>(topic: T, qos: QoS) -> Self {
+        Self {
+            topic: topic.into(),
+            qos,
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TopicQosFilters(Vec<TopicQosFilter>);
+
+impl TopicQosFilters {
+    pub fn new<T: IntoIterator<Item = TopicQosFilter>>(filters: T) -> Self {
+        let values: Vec<TopicQosFilter> = filters.into_iter().collect();
+
+        if values.is_empty() {
+            panic!("At least one topic filter is required");
+        }
+
+        TopicQosFilters(values)
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub(crate) fn decode(payload: &mut Bytes) -> Result<Self, Error> {
+        let mut filters = Vec::with_capacity(1);
+
+        while payload.has_remaining() {
+            let filter = decode_string(payload)?;
+            let flags = decode_byte(payload)?;
+
+            // The upper 6 bits of the Requested QoS byte must be zero
+            if flags & 0b1111_1100 > 0 {
+                return Err(Error::MalformedPacket);
+            }
+
+            filters.push(TopicQosFilter::new(filter, flags.try_into()?));
+        }
+
+        if filters.is_empty() {
+            return Err(Error::NoTopic);
+        }
+
+        Ok(TopicQosFilters(filters))
+    }
+
+    pub(crate) fn encode(&self, buf: &mut BytesMut) {
+        self.0.iter().for_each(|f| {
+            encode_string(buf, &f.topic);
+            buf.put_u8(f.qos.into());
+        });
+    }
+
+    pub(crate) fn encoded_len(&self) -> usize {
+        self.0.iter().fold(0, |acc, f| acc + 2 + f.topic.len() + 1)
+    }
+}
+
+impl AsRef<Vec<TopicQosFilter>> for TopicQosFilters {
+    #[inline]
+    fn as_ref(&self) -> &Vec<TopicQosFilter> {
+        self.0.as_ref()
+    }
+}
+
+impl Borrow<Vec<TopicQosFilter>> for TopicQosFilters {
+    fn borrow(&self) -> &Vec<TopicQosFilter> {
+        self.0.as_ref()
+    }
+}
+
+impl IntoIterator for TopicQosFilters {
+    type Item = TopicQosFilter;
+    type IntoIter = std::vec::IntoIter<TopicQosFilter>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter()
+    }
+}
+
+impl FromIterator<TopicQosFilter> for TopicQosFilters {
+    fn from_iter<T: IntoIterator<Item = TopicQosFilter>>(iter: T) -> Self {
+        TopicQosFilters(Vec::from_iter(iter))
+    }
+}
+
+impl Into<Vec<TopicQosFilter>> for TopicQosFilters {
+    #[inline]
+    fn into(self) -> Vec<TopicQosFilter> {
+        self.0
+    }
+}
+
+impl From<Vec<TopicQosFilter>> for TopicQosFilters {
+    #[inline]
+    fn from(value: Vec<TopicQosFilter>) -> Self {
+        TopicQosFilters(value)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subscribe {

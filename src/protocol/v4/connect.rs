@@ -1,7 +1,91 @@
-use crate::protocol::common::connect;
+use crate::codec::util::{decode_bytes, decode_string, encode_bytes, encode_string};
+use crate::protocol::common::frame::{ConnectFrame, WillFrame};
+use crate::protocol::common::{connect, ConnectHeader};
 use crate::protocol::Protocol;
+use crate::{Error, QoS};
+use bit_field::BitField;
+use bytes::{Bytes, BytesMut};
+use std::ops::RangeInclusive;
 
-connect!(Connect, Protocol::V4);
+const WILL_FLAG: usize = 2;
+const WILL_QOS: RangeInclusive<usize> = 3..=4;
+const WILL_RETAIN: usize = 5;
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Will {
+    pub topic: String,
+    pub payload: Bytes,
+    pub qos: QoS,
+    pub retain: bool,
+}
+
+impl Will {
+    pub fn new<T: Into<String>>(topic: T, payload: Bytes, qos: QoS, retain: bool) -> Self {
+        Will {
+            topic: topic.into(),
+            payload,
+            qos,
+            retain,
+        }
+    }
+}
+
+impl WillFrame for Will {
+    fn encoded_len(&self) -> usize {
+        2 + self.topic.len() + 2 + self.payload.len()
+    }
+
+    fn update_flags(&self, flags: &mut u8) {
+        // Update the 'Will' flag
+        flags.set_bit(WILL_FLAG as usize, true);
+
+        // Update 'Qos' flags
+        flags.set_bits(WILL_QOS, self.qos as u8);
+
+        // Update the 'Will Retain' flag
+        flags.set_bit(WILL_RETAIN, self.retain);
+    }
+
+    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
+        encode_string(buf, &self.topic);
+        encode_bytes(buf, &self.payload);
+        Ok(())
+    }
+
+    fn decode(buf: &mut Bytes, flags: u8) -> Result<Option<Self>, Error> {
+        if !flags.get_bit(WILL_FLAG) {
+            // No 'Will'
+            return Ok(None);
+        }
+
+        let qos = flags.get_bits(WILL_QOS).try_into()?;
+        let retain = flags.get_bit(WILL_RETAIN);
+
+        let topic = decode_string(buf)?;
+        let message = decode_bytes(buf)?;
+        Ok(Some(Will::new(topic, message, qos, retain)))
+    }
+}
+
+#[derive(Debug, Default, Copy, Clone, PartialEq, Eq)]
+pub(crate) struct Propertyless;
+
+impl ConnectFrame for ConnectHeader<Propertyless> {
+    fn encoded_len(&self) -> usize {
+        self.primary_encoded_len()
+    }
+
+    fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
+        self.primary_encode(buf);
+        Ok(())
+    }
+
+    fn decode(buf: &mut Bytes) -> Result<Self, Error> {
+        Self::primary_decode(buf)
+    }
+}
+
+connect!(Connect<Propertyless, Will>, Protocol::V4);
 
 #[cfg(test)]
 mod tests {

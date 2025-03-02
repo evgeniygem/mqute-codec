@@ -16,17 +16,23 @@ pub enum Error {
     #[error("Invalid protocol level: {0}")]
     InvalidProtocolLevel(u8),
 
+    #[error("Invalid property: {0}")]
+    InvalidProperty(u8),
+
     #[error("Invalid UTF-8")]
     InvalidUtf8,
 
     #[error("Invalid QoS: {0}")]
     InvalidQos(u8),
 
+    #[error("Invalid retain handling: {0}")]
+    InvalidRetainHandling(u8),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Malformed remaining length")]
-    MalformedRemainingLength,
+    #[error("Malformed variable byte integer")]
+    MalformedVariableByteInteger,
 
     #[error("Malformed packet")]
     MalformedPacket,
@@ -55,11 +61,17 @@ pub enum Error {
     #[error("Payload size limit exceeded: {0}")]
     PayloadSizeLimitExceeded(usize),
 
+    #[error("Protocol error")]
+    ProtocolError,
+
     #[error("Protocol mismatch")]
     ProtocolMismatch,
 
     #[error("Protocol not supported")]
     ProtocolNotSupported,
+
+    #[error("Property mismatch")]
+    PropertyMismatch,
 
     #[error("String too long")]
     StringTooLong,

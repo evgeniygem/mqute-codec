@@ -1,4 +1,4 @@
-use super::Encode;
+use super::{Encode, Encoded};
 use crate::protocol::FixedHeader;
 use crate::Error;
 use bytes::{Buf, Bytes, BytesMut};

@@ -1,6 +1,6 @@
+use super::util;
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::common::util;
 use crate::protocol::{FixedHeader, Flags, PacketType};
 use crate::{Error, QoS};
 use bytes::BufMut;
@@ -23,10 +23,6 @@ impl Encode for PubRel {
 
     fn payload_len(&self) -> usize {
         2
-    }
-
-    fn encoded_len(&self) -> usize {
-        2 + 2 // Fixed header size + variable header size
     }
 }
 

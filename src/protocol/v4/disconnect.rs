@@ -1,4 +1,4 @@
-use crate::protocol::common::util;
+use super::util;
 use crate::protocol::PacketType;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]

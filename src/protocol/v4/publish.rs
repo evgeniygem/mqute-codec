@@ -1,5 +1,5 @@
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::variable::PublishHeader;
+use crate::protocol::common::PublishHeader;
 use crate::protocol::{FixedHeader, Flags, PacketType};
 use crate::Error;
 use crate::QoS;
@@ -9,13 +9,11 @@ use bytes::{Bytes, BytesMut};
 pub struct Publish {
     header: PublishHeader,
     payload: Bytes,
-    qos: QoS,
-    dup: bool,
-    retain: bool,
+    flags: Flags,
 }
 
 impl Publish {
-    pub fn new<T: Into<String>>(topic: T, payload: Bytes, packet_id: u16, flags: Flags) -> Self {
+    pub fn new<T: Into<String>>(topic: T, packet_id: u16, payload: Bytes, flags: Flags) -> Self {
         if flags.qos != QoS::AtMostOnce && packet_id == 0 {
             panic!("Control packets must contain a non-zero packet identifier at QoS > 0");
         }
@@ -23,9 +21,7 @@ impl Publish {
         Publish {
             header: PublishHeader::new(topic, packet_id),
             payload,
-            qos: flags.qos,
-            dup: flags.dup,
-            retain: flags.retain,
+            flags,
         }
     }
 }
@@ -43,9 +39,7 @@ impl Decode for Publish {
         let packet = Publish {
             header: publish_header,
             payload: packet.payload,
-            qos: flags.qos,
-            dup: flags.dup,
-            retain: flags.retain,
+            flags,
         };
         Ok(packet)
     }
@@ -53,15 +47,9 @@ impl Decode for Publish {
 
 impl Encode for Publish {
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        let flags = Flags {
-            dup: self.dup,
-            qos: self.qos,
-            retain: self.retain,
-        };
-
-        let header = FixedHeader::with_flags(PacketType::Publish, flags, self.payload_len());
+        let header = FixedHeader::with_flags(PacketType::Publish, self.flags, self.payload_len());
         header.encode(buf)?;
-        self.header.encode(buf, self.qos);
+        self.header.encode(buf, self.flags.qos);
 
         // Append message
         buf.extend_from_slice(&self.payload);
@@ -69,8 +57,7 @@ impl Encode for Publish {
     }
 
     fn payload_len(&self) -> usize {
-        let packet_id_len = if self.qos == QoS::AtMostOnce { 0 } else { 2 };
-        2 + self.header.topic.len() + self.payload.len() + packet_id_len
+        self.header.encoded_len(self.flags.qos) + self.payload.len()
     }
 }
 
@@ -116,8 +103,8 @@ mod tests {
             packet,
             Publish::new(
                 "/test",
-                Bytes::copy_from_slice(&payload),
                 0x1234,
+                Bytes::copy_from_slice(&payload),
                 Flags::new(QoS::ExactlyOnce)
             )
         );
@@ -128,8 +115,8 @@ mod tests {
         let payload: [u8; 4] = [0xde, 0xad, 0xbe, 0xef];
         let packet = Publish::new(
             "/test",
-            Bytes::copy_from_slice(&payload),
             0x1234,
+            Bytes::copy_from_slice(&payload),
             Flags::new(QoS::ExactlyOnce),
         );
 

@@ -37,7 +37,7 @@ impl Flags {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) struct FixedHeader {
+pub struct FixedHeader {
     control_byte: u8,
     remaining_len: usize,
 }
@@ -88,7 +88,7 @@ impl FixedHeader {
     }
 
     pub fn fixed_len(&self) -> usize {
-        util::remaining_len_bytes(self.remaining_len) + 1
+        util::len_bytes(self.remaining_len) + 1
     }
 
     pub fn packet_len(&self) -> usize {
@@ -97,7 +97,7 @@ impl FixedHeader {
 
     pub fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         buf.put_u8(self.control_byte);
-        codec::util::encode_remaining_length(buf, self.remaining_len)
+        codec::util::encode_variable_integer(buf, self.remaining_len as u32)
     }
 
     pub fn decode(buf: &[u8], inbound_max_size: Option<usize>) -> Result<Self, Error> {
@@ -109,7 +109,7 @@ impl FixedHeader {
 
         let mut buf = buf;
         let control_byte = buf.get_u8();
-        let remaining_len = codec::util::decode_remaining_length(buf)?;
+        let remaining_len = codec::util::decode_variable_integer(buf)? as usize;
 
         let header = FixedHeader::try_from(control_byte, remaining_len)?;
 

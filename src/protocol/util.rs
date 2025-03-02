@@ -1,5 +1,5 @@
 #[inline]
-pub(crate) fn remaining_len_bytes(len: usize) -> usize {
+pub(crate) fn len_bytes(len: usize) -> usize {
     if len < 128 {
         1
     } else if len < 16_384 {

@@ -1,4 +1,4 @@
-use crate::protocol::common::util;
+use super::util;
 use crate::protocol::PacketType;
 
 // Create 'UnsubAck' packet

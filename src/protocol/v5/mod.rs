@@ -1,19 +1,23 @@
+mod auth;
 mod connack;
 mod connect;
 mod disconnect;
 mod packet;
 mod ping;
+mod property;
 mod puback;
 mod pubcomp;
 mod publish;
 mod pubrec;
 mod pubrel;
+mod reason;
 mod suback;
 mod subscribe;
 mod unsuback;
 mod unsubscribe;
 mod util;
 
+pub use auth::*;
 pub use connack::*;
 pub use connect::*;
 pub use disconnect::*;

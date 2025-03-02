@@ -1,7 +1,8 @@
 use crate::protocol::common::connect;
+use crate::protocol::v4::{Propertyless, Will};
 use crate::protocol::Protocol;
 
-connect!(Connect, Protocol::V3);
+connect!(Connect<Propertyless, Will>, Protocol::V3);
 
 #[cfg(test)]
 mod tests {
