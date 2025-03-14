@@ -3,12 +3,6 @@
 //! This module defines the `Error` enum, which represents various errors that can occur
 //! when working with the MQTT protocol. The enum is derived using the `thiserror` crate,
 //! which provides convenient error handling and formatting.
-//!
-//! ## Overview
-//!
-//! The `Error` enum encapsulates a wide range of errors, including protocol violations,
-//! invalid data, I/O errors, and more. Each variant includes a descriptive error message
-//! and, where applicable, additional context (e.g., invalid values or sizes).
 
 use std::io;
 

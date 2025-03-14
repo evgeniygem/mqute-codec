@@ -3,8 +3,6 @@
 //! This module provides an enum to represent the types of MQTT packets and utilities
 //! for converting between packet types and their corresponding numeric values.
 //!
-//! ## Overview
-//!
 //! The `PacketType` enum represents the types of MQTT packets as defined by the MQTT protocol.
 //! Each packet type corresponds to a specific numeric value, which is used in the fixed header
 //! of MQTT packets.
@@ -52,9 +50,6 @@ impl TryFrom<u8> for PacketType {
     type Error = Error;
 
     /// Attempts to convert a numeric value into a `PacketType` enum.
-    ///
-    /// # Arguments
-    /// - `value`: The numeric value representing the packet type.
     ///
     /// # Errors
     /// Returns an `Error::InvalidPacketType` if the value is not a valid packet type.

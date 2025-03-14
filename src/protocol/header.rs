@@ -3,8 +3,6 @@
 //! This module provides structures and utilities for handling the fixed header and flags
 //! in the MQTT protocol.
 //!
-//! ## Overview
-//!
 //! The MQTT protocol uses a fixed header to describe the type of packet and its properties.
 //! The `FixedHeader` struct represents this header, while the `Flags` struct encapsulates
 //! the control flags (DUP, QoS, and RETAIN) associated with the packet.
@@ -17,11 +15,6 @@ use bytes::{Buf, BufMut, BytesMut};
 use std::cmp::PartialEq;
 
 /// Represents the control flags in an MQTT packet.
-///
-/// The flags include:
-/// - `dup`: Indicates if the packet is a duplicate.
-/// - `qos`: The Quality of Service level (0, 1, or 2).
-/// - `retain`: Indicates if the message should be retained by the broker.
 ///
 /// # Examples
 ///
@@ -41,8 +34,13 @@ use std::cmp::PartialEq;
 /// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct Flags {
+    /// Indicates if the packet is a duplicate.
     pub dup: bool,
+
+    /// The Quality of Service level (0, 1, or 2).
     pub qos: QoS,
+
+    /// Indicates if the message should be retained by the broker.
     pub retain: bool,
 }
 
@@ -62,9 +60,6 @@ impl Default for Flags {
 
 impl Flags {
     /// Creates new `Flags` with the specified QoS level.
-    ///
-    /// # Arguments
-    /// - `qos`: The Quality of Service level.
     ///
     /// # Examples
     ///
@@ -100,10 +95,6 @@ impl Flags {
 
 /// Represents the fixed header of an MQTT packet.
 ///
-/// The fixed header contains:
-/// - `control_byte`: The first byte of the packet, encoding the packet type and flags.
-/// - `remaining_len`: The length of the remaining payload.
-///
 /// # Examples
 ///
 /// ```
@@ -116,16 +107,15 @@ impl Flags {
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FixedHeader {
+    /// The first byte of the packet, encoding the packet type and flags.
     control_byte: u8,
+
+    /// The length of the remaining payload.
     remaining_len: usize,
 }
 
 impl FixedHeader {
     /// Creates a new `FixedHeader` with the specified packet type and remaining length.
-    ///
-    /// # Arguments
-    /// - `packet`: The type of the MQTT packet.
-    /// - `remaining_len`: The length of the remaining payload.
     ///
     /// # Examples
     ///
@@ -145,10 +135,6 @@ impl FixedHeader {
     }
 
     /// Attempts to create a `FixedHeader` from a control byte and remaining length.
-    ///
-    /// # Arguments
-    /// - `control_byte`: The first byte of the packet.
-    /// - `remaining_len`: The length of the remaining payload.
     ///
     /// # Errors
     /// Returns an error if the packet type is invalid.
@@ -172,11 +158,6 @@ impl FixedHeader {
     }
 
     /// Creates a `FixedHeader` with custom flags.
-    ///
-    /// # Arguments
-    /// - `packet_type`: The type of the MQTT packet.
-    /// - `flags`: The control flags.
-    /// - `remaining_len`: The length of the remaining payload.
     ///
     /// # Examples
     ///
@@ -275,9 +256,6 @@ impl FixedHeader {
 
     /// Encodes the fixed header into a buffer.
     ///
-    /// # Arguments
-    /// - `buf`: The buffer to write the encoded header into.
-    ///
     /// # Errors
     /// Returns an error if encoding fails.
     ///
@@ -297,10 +275,6 @@ impl FixedHeader {
     }
 
     /// Decodes a fixed header from a buffer.
-    ///
-    /// # Arguments
-    /// - `buf`: The buffer to read the header from.
-    /// - `inbound_max_size`: Optional maximum allowed payload size.
     ///
     /// # Errors
     /// Returns an error if decoding fails or the payload size exceeds the limit.

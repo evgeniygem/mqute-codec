@@ -1,3 +1,8 @@
+//! # SubAck Packet V3
+//!
+//! This module initializes the `SubAck` packet for MQTT protocol.
+//! It uses the `suback!` macro to define the `SubAck` packet structure with support
+//! for Quality of Service (QoS) levels.
 use crate::protocol::common::suback;
 use crate::protocol::QoS;
 

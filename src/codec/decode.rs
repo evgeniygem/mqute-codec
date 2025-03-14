@@ -3,8 +3,6 @@
 //! This module defines the `Decode` trait, which provides a common interface for decoding
 //! MQTT packets from their raw representation (`RawPacket`).
 //!
-//! ## Overview
-//!
 //! The `Decode` trait is implemented by types that can be decoded from a raw MQTT packet.
 
 use super::RawPacket;
@@ -16,13 +14,6 @@ use crate::Error;
 /// deserializing MQTT packets received over the network.
 pub trait Decode: Sized {
     /// Decodes a raw MQTT packet into the implementing type.
-    ///
-    /// # Arguments
-    /// - `packet`: The raw packet to decode.
-    ///
-    /// # Returns
-    /// - `Ok(Self)`: If decoding is successful.
-    /// - `Err(Error)`: If decoding fails.
     ///
     /// # Examples
     ///

@@ -3,8 +3,6 @@
 //! This module provides the `Encode` and `Encoded` traits, which define a common interface
 //! for encoding MQTT packets into a buffer and calculating their encoded length.
 //!
-//! ## Overview
-//!
 //! - `Encode`: A trait for encoding MQTT packets into a buffer.
 //! - `Encoded`: A trait for calculating the total encoded length of an MQTT packet,
 //!   including the fixed header and payload.
@@ -19,13 +17,6 @@ use bytes::BytesMut;
 /// transmission over the network.
 pub trait Encode {
     /// Encodes the packet into the provided buffer.
-    ///
-    /// # Arguments
-    /// - `buf`: The buffer to write the encoded data into.
-    ///
-    /// # Returns
-    /// - `Ok(())`: If encoding is successful.
-    /// - `Err(Error)`: If encoding fails.
     ///
     /// # Examples
     ///

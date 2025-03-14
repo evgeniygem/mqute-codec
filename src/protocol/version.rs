@@ -3,8 +3,6 @@
 //! This module provides an enum to represent the MQTT protocol versions and utilities
 //! for converting between protocol versions and their corresponding numeric values.
 //!
-//! ## Overview
-//!
 //! The `Protocol` enum represents the supported MQTT protocol versions:
 //! - `V3`: MQTT v3.1 (also known as MQIsdp)
 //! - `V4`: MQTT v3.1.1
@@ -51,9 +49,6 @@ impl TryFrom<u8> for Protocol {
     type Error = Error;
 
     /// Attempts to convert a numeric value into a `Protocol` enum.
-    ///
-    /// # Arguments
-    /// - `value`: The numeric value representing the protocol version.
     ///
     /// # Errors
     /// Returns an `Error::InvalidProtocolLevel` if the value is not a valid protocol version.

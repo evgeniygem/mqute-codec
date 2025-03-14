@@ -1,3 +1,8 @@
+//! # Connect Packet
+//!
+//! This module provides structures and utilities for handling the MQTT Connect packet,
+//! which is used to initiate a connection between a client and an MQTT broker.
+
 use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
 use crate::protocol::common::frame::WillFrame;
 use crate::protocol::Protocol;
@@ -5,6 +10,7 @@ use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
+/// Represents the header of the MQTT Connect packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ConnectHeader<T> {
     pub protocol: Protocol,
@@ -14,6 +20,7 @@ pub(crate) struct ConnectHeader<T> {
 }
 
 impl<T> ConnectHeader<T> {
+    /// Creates a new `ConnectHeader`.
     pub(crate) fn new(
         protocol: Protocol,
         flags: u8,
@@ -28,6 +35,9 @@ impl<T> ConnectHeader<T> {
         }
     }
 
+    /// Calculates the length of the primary encoded header.
+    ///
+    /// This includes the protocol name, protocol level, flags, and keep-alive duration.
     pub(crate) fn primary_encoded_len(&self) -> usize {
         2 + self.protocol.name().len() // Protocol name string
             + 1                        // Protocol level
@@ -35,6 +45,7 @@ impl<T> ConnectHeader<T> {
             + 2 // Keep alive
     }
 
+    /// Encodes the primary header fields into the provided buffer.
     pub(crate) fn primary_encode(&self, buf: &mut BytesMut) {
         // Encode the protocol name
         encode_string(buf, self.protocol.name());
@@ -49,6 +60,7 @@ impl<T> ConnectHeader<T> {
         buf.put_u16(self.keep_alive);
     }
 
+    /// Decodes the primary header fields from the provided buffer.
     pub(crate) fn primary_decode(buf: &mut Bytes) -> Result<Self, Error> {
         let protocol_name = decode_string(buf)?;
 
@@ -73,13 +85,41 @@ impl<T> ConnectHeader<T> {
 const PASSWORD: usize = 6;
 const USERNAME: usize = 7;
 
+/// Represents authentication information for an MQTT connection.
+///
+/// The `Auth` struct encapsulates the username and optional password used for authenticating
+/// a client with an MQTT broker. It provides methods for creating, encoding, decoding, and
+/// manipulating authentication data.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Auth {
+    /// The username for authentication.
     username: String,
+
+    /// An optional password for authentication
     password: Option<String>,
 }
 
 impl Auth {
+    /// Creates a new `Auth` instance.
+    ///
+    /// # Arguments
+    ///
+    /// - `username`: The username for authentication. This can be any type that implements `Into<String>`.
+    /// - `password`: An optional password for authentication.
+    ///
+    /// # Returns
+    ///
+    /// A new `Auth` instance.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Auth;
+    ///
+    /// let auth = Auth::new("user", Some("pass".to_string()));
+    /// assert_eq!(auth.username(), "user");
+    /// assert_eq!(auth.password(), Some("pass".to_string()));
+    /// ```
     pub fn new<T>(username: T, password: Option<String>) -> Self
     where
         T: Into<String>,
@@ -90,30 +130,101 @@ impl Auth {
         }
     }
 
+    /// Creates a new `Auth` instance with only a username.
+    ///
+    /// # Arguments
+    ///
+    /// - `username`: The username for authentication. This can be any type that implements `Into<String>`.
+    ///
+    /// # Returns
+    ///
+    /// A new `Auth` instance with no password.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Auth;
+    ///
+    /// let auth = Auth::with_name("user");
+    /// assert_eq!(auth.username(), "user");
+    /// assert_eq!(auth.password(), None);
+    /// ```
     pub fn with_name<T: Into<String>>(username: T) -> Self {
         Self::new(username, None)
     }
 
+    /// Creates a new `Auth` instance with both a username and password.
+    ///
+    /// # Arguments
+    ///
+    /// - `username`: The username for authentication. This can be any type that implements `Into<String>`.
+    /// - `password`: The password for authentication. This can be any type that implements `Into<String>`.
+    ///
+    /// # Returns
+    ///
+    /// A new `Auth` instance with both username and password.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Auth;
+    ///
+    /// let auth = Auth::login("user", "pass");
+    /// assert_eq!(auth.username(), "user");
+    /// assert_eq!(auth.password(), Some("pass".to_string()));
+    /// ```
     pub fn login<T: Into<String>, U: Into<String>>(username: T, password: U) -> Self {
         Self::new(username.into(), Some(password.into()))
     }
 
+    /// Returns the username.
+    ///
+    /// # Returns
+    ///
+    /// The username as a `String`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Auth;
+    ///
+    /// let auth = Auth::with_name("user");
+    /// assert_eq!(auth.username(), "user");
+    /// ```
     pub fn username(&self) -> String {
         self.username.clone()
     }
 
+    /// Returns the optional password.
+    ///
+    /// # Returns
+    ///
+    /// The password as an `Option<String>`.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Auth;
+    ///
+    /// let auth = Auth::login("user", "pass");
+    /// assert_eq!(auth.password(), Some("pass".to_string()));
+    /// ```
     pub fn password(&self) -> Option<String> {
         self.password.clone()
     }
 
+    /// Calculates the encoded length of the `Auth` structure.
+    ///
+    /// This is used to determine the size of the buffer required to encode the `Auth` data.
     pub(crate) fn encoded_len(&self) -> usize {
-        let mut size = 2 + self.username.len();
+        let mut size = 2 + self.username.len(); // 2 bytes for string length + username length
         if let Some(password) = self.password.as_ref() {
-            size += 2 + password.len();
+            size += 2 + password.len(); // 2 bytes for string length + password length
         }
         size
     }
 
+    /// Encodes the `Auth` structure into the provided buffer.
     pub(crate) fn encode(&self, buf: &mut BytesMut) {
         encode_string(buf, &self.username);
 
@@ -122,6 +233,7 @@ impl Auth {
         }
     }
 
+    /// Updates the connection flags based on the presence of a username and password.
     pub(crate) fn update_flags(&self, flags: &mut u8) {
         // Update username flag
         flags.set_bit(USERNAME, true);
@@ -130,6 +242,7 @@ impl Auth {
         flags.set_bit(PASSWORD, self.password.is_some());
     }
 
+    /// Decodes the `Auth` structure from the provided buffer and flags.
     pub(crate) fn decode(buf: &mut Bytes, flags: u8) -> Result<Option<Self>, Error> {
         if !flags.get_bit(USERNAME) {
             return Ok(None);
@@ -147,6 +260,7 @@ impl Auth {
     }
 }
 
+/// Represents the payload of the MQTT Connect packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ConnectPayload<T> {
     pub client_id: String,
@@ -158,6 +272,7 @@ impl<T> ConnectPayload<T>
 where
     T: WillFrame,
 {
+    /// Creates a new `ConnectPayload`.
     pub(crate) fn new<S: Into<String>>(client_id: S, auth: Option<Auth>, will: Option<T>) -> Self {
         ConnectPayload {
             client_id: client_id.into(),
@@ -166,6 +281,7 @@ where
         }
     }
 
+    /// Decodes the `ConnectPayload` from the provided buffer and flags.
     pub(crate) fn decode(payload: &mut Bytes, flags: u8) -> Result<Self, Error> {
         let client_id = decode_string(payload)?;
 
@@ -179,6 +295,7 @@ where
         })
     }
 
+    /// Encodes the `ConnectPayload` into the provided buffer.
     pub(crate) fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         // Encode the client id
         encode_string(buf, &self.client_id);
@@ -194,6 +311,7 @@ where
         Ok(())
     }
 
+    /// Calculates the encoded length of the `ConnectPayload`.
     pub(crate) fn encoded_len(&self) -> usize {
         2 + self.client_id.len() +            // Client ID
             self.will                         // WillFlag
@@ -207,6 +325,10 @@ where
     }
 }
 
+/// Generates a Connect packet structure with specific properties and will message types.
+///
+/// The `connect!` macro is used to generate a Connect packet structure that includes
+/// the header, payload, and encoding/decoding logic for a specific MQTT protocol version.
 macro_rules! connect {
     ($name:ident <$property:ident, $will:ident>, $proto:expr) => {
         #[derive(Debug, Clone, PartialEq, Eq)]
