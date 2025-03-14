@@ -1,3 +1,7 @@
+//! The packet! macro generates an enum and associated methods for handling MQTT packets. It takes
+//! identifiers for each MQTT packet type as input and creates a unified Packet enum that can
+//! represent any MQTT packet (only V4 and V3).
+
 macro_rules! packet {
     ($packet:ident, $connect:ident, $connack:ident,
      $publish:ident, $puback:ident, $pubrec:ident,

@@ -3,6 +3,7 @@ use crate::protocol::QoS;
 use crate::Error;
 use bytes::{BufMut, Bytes, BytesMut};
 
+/// Represents the header of the MQTT Publish packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct PublishHeader {
     pub topic: String,

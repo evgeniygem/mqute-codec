@@ -1,3 +1,8 @@
+//! # Connect Packet V3
+//!
+//! This module initializes the `Connect` packet for MQTT v3 (3.1) protocol.
+//! It uses the `connect!` macro to define the `Connect` packet structure with specific
+//! configurations for MQTT v3 compatibility.
 use crate::protocol::common::connect;
 use crate::protocol::v4::{Propertyless, Will};
 use crate::protocol::Protocol;
@@ -7,10 +12,8 @@ connect!(Connect<Propertyless, Will>, Protocol::V3);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::codec::PacketCodec;
     use crate::codec::*;
     use crate::protocol::*;
-    use crate::QoS;
     use bytes::{Bytes, BytesMut};
     use tokio_util::codec::Decoder;
 

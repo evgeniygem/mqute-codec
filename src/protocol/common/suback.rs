@@ -1,3 +1,7 @@
+/// Generates a SubAck packet structure with specific code types.
+///
+/// The `suback!` macro is used to generate a SubAck packet structure that includes
+/// the payload, and encoding/decoding logic for a specific MQTT protocol version (only V4 and V3).
 macro_rules! suback {
     ($packet:ident, $code:ty) => {
         use bytes::BufMut;

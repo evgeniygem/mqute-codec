@@ -4,8 +4,6 @@
 //! in the MQTT protocol and utilities for converting between QoS levels and their
 //! corresponding numeric values.
 //!
-//! ## Overview
-//!
 //! The `QoS` enum represents the three levels of Quality of Service in MQTT:
 //! - `AtMostOnce`: QoS level 0 (Fire and Forget)
 //! - `AtLeastOnce`: QoS level 1 (Acknowledged Delivery)
@@ -35,9 +33,6 @@ impl TryFrom<u8> for QoS {
     type Error = Error;
 
     /// Attempts to convert a numeric value into a `QoS` enum.
-    ///
-    /// # Arguments
-    /// - `value`: The numeric value representing the QoS level.
     ///
     /// # Errors
     /// Returns an `Error::InvalidQos` if the value is not a valid QoS level.

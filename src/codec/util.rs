@@ -3,33 +3,34 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 const PAYLOAD_MAX_SIZE: u32 = 268_435_455;
 
+/// Decodes byte
 pub(crate) fn decode_byte(buf: &mut Bytes) -> Result<u8, Error> {
     if buf.is_empty() {
         return Err(Error::MalformedPacket);
     }
 
-    // Big endian
     Ok(buf.get_u8())
 }
 
+/// Decodes u16
 pub(crate) fn decode_word(buf: &mut Bytes) -> Result<u16, Error> {
     if buf.len() < 2 {
         return Err(Error::MalformedPacket);
     }
 
-    // Big endian
     Ok(buf.get_u16())
 }
 
+/// Decodes u32
 pub(crate) fn decode_dword(buf: &mut Bytes) -> Result<u32, Error> {
     if buf.len() < 4 {
         return Err(Error::MalformedPacket);
     }
 
-    // Big endian
     Ok(buf.get_u32())
 }
 
+/// Decodes a byte array
 pub(crate) fn decode_bytes(buf: &mut Bytes) -> Result<Bytes, Error> {
     let len = decode_word(buf)? as usize;
     if len > buf.len() {
@@ -39,20 +40,24 @@ pub(crate) fn decode_bytes(buf: &mut Bytes) -> Result<Bytes, Error> {
     Ok(buf.split_to(len))
 }
 
+/// Decodes a UTF-8 valid string
 pub(crate) fn decode_string(buf: &mut Bytes) -> Result<String, Error> {
     let bytes = decode_bytes(buf)?;
     String::from_utf8(bytes.to_vec()).map_err(|_| Error::InvalidUtf8)
 }
 
+/// Encodes a byte array
 pub(crate) fn encode_bytes(buf: &mut BytesMut, bytes: &[u8]) {
     buf.put_u16(bytes.len() as u16);
     buf.extend_from_slice(bytes);
 }
 
+/// Encodes a UTF-8 valid string
 pub(crate) fn encode_string<T: AsRef<str>>(buf: &mut BytesMut, s: T) {
     encode_bytes(buf, s.as_ref().as_bytes());
 }
 
+/// Encodes a variable byte integer
 pub(crate) fn encode_variable_integer(buf: &mut BytesMut, value: u32) -> Result<(), Error> {
     if value > PAYLOAD_MAX_SIZE {
         return Err(Error::PayloadTooLarge);
@@ -75,6 +80,7 @@ pub(crate) fn encode_variable_integer(buf: &mut BytesMut, value: u32) -> Result<
     Ok(())
 }
 
+/// Decodes a variable byte integer
 pub(crate) fn decode_variable_integer(buf: &[u8]) -> Result<u32, Error> {
     let mut value = 0u32;
     let mut done = false;

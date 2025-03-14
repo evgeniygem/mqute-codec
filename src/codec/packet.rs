@@ -4,8 +4,6 @@
 //! and the `PacketCodec` struct, which implements encoding and decoding of MQTT packets
 //! using the `tokio_util::codec` traits.
 //!
-//! ## Overview
-//!
 //! - `RawPacket`: Represents a raw MQTT packet, consisting of a fixed header and a payload.
 //! - `PacketCodec`: A codec for encoding and decoding MQTT packets, with support for
 //!   size limits on inbound and outbound packets.
@@ -72,10 +70,6 @@ pub struct PacketCodec {
 impl PacketCodec {
     /// Creates a new `PacketCodec` with the specified size limits.
     ///
-    /// # Arguments
-    /// - `inbound_max_size`: The maximum allowed size for inbound packets.
-    /// - `outbound_max_size`: The maximum allowed size for outbound packets.
-    ///
     /// # Examples
     ///
     /// ```
@@ -91,13 +85,6 @@ impl PacketCodec {
     }
 
     /// Attempts to decode a raw packet from the provided buffer.
-    ///
-    /// # Arguments
-    /// - `dst`: The buffer containing the raw packet data.
-    ///
-    /// # Returns
-    /// - `Ok(RawPacket)`: If decoding is successful.
-    /// - `Err(Error)`: If decoding fails.
     ///
     /// # Examples
     ///
@@ -130,14 +117,6 @@ where
     type Error = Error;
 
     /// Encodes an item into the provided buffer.
-    ///
-    /// # Arguments
-    /// - `item`: The item to encode.
-    /// - `dst`: The buffer to write the encoded data into.
-    ///
-    /// # Returns
-    /// - `Ok(())`: If encoding is successful.
-    /// - `Err(Error)`: If encoding fails or the outbound size limit is exceeded.
     ///
     /// # Examples
     ///
@@ -183,14 +162,6 @@ impl Decoder for PacketCodec {
     type Error = Error;
 
     /// Decodes a raw packet from the provided buffer.
-    ///
-    /// # Arguments
-    /// - `src`: The buffer containing the raw packet data.
-    ///
-    /// # Returns
-    /// - `Ok(Some(RawPacket))`: If decoding is successful.
-    /// - `Ok(None)`: If more data is needed to decode the packet.
-    /// - `Err(Error)`: If decoding fails.
     ///
     /// # Examples
     ///

@@ -1,8 +1,17 @@
+//! # Codes and Topic Filters
+//!
+//! This module provides utilities for handling MQTT protocol-specific data structures,
+//! specifically `Codes` and `TopicFilters`. These structures are used to encode and decode
+//! MQTT protocol data, such as return codes and topic filters, which are essential for
+//! MQTT communication.
+
 use crate::codec::util::{decode_string, encode_string};
 use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 
+/// The `Codes` module provides a generic structure to handle a collection of MQTT return codes.
+/// These codes are used in various MQTT control packets, such as CONNACK, SUBACK, and UNSUBACK.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Codes<T>(Vec<T>);
 
@@ -10,6 +19,21 @@ impl<T> Codes<T>
 where
     T: TryFrom<u8, Error = Error> + Into<u8> + Copy,
 {
+    /// Creates a new `Codes` instance from an iterator of codes.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the iterator is empty, as at least one code is required.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::{Codes, QoS};
+    /// use mqute_codec::protocol::v4::ReturnCode;
+    ///
+    /// let values = vec![ReturnCode::Failure, ReturnCode::Success(QoS::AtLeastOnce)];
+    /// let codes: Codes<ReturnCode> = Codes::new(values);
+    /// ```
     pub fn new<I: IntoIterator<Item = T>>(codes: I) -> Self {
         let values: Vec<T> = codes.into_iter().collect();
 
@@ -20,6 +44,7 @@ where
         Codes(values)
     }
 
+    /// Decodes a `Codes` instance from a byte buffer.
     pub(crate) fn decode(payload: &mut Bytes) -> Result<Self, Error> {
         let mut codes: Vec<T> = Vec::with_capacity(payload.len());
         while payload.has_remaining() {
@@ -33,18 +58,25 @@ where
         Ok(codes.into())
     }
 
+    /// Encodes the `Codes` instance into a byte buffer.
     pub(crate) fn encode(&self, buf: &mut BytesMut) {
         self.0.iter().for_each(|&value| {
             buf.put_u8(value.into());
         });
     }
 
+    /// Returns the number of codes in the `Codes` instance.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Codes;
+    ///
+    /// let codes: Codes<u8> = Codes::new(vec![0x01, 0x02, 0x03]);
+    /// assert_eq!(codes.len(), 3);
+    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
-    }
-
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
     }
 }
 
@@ -90,10 +122,25 @@ impl<T> From<Vec<T>> for Codes<T> {
     }
 }
 
+/// The `TopicFilters` provides a structure to handle a collection of MQTT topic filters.
+/// Topic filters are used in MQTT subscriptions and unsubscriptions.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicFilters(Vec<String>);
 
 impl TopicFilters {
+    /// Creates a new `TopicFilters` instance from an iterator of topic filters.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the iterator is empty, as at least one topic filter is required.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::TopicFilters;
+    ///
+    /// let filters = TopicFilters::new(vec!["topic1".to_string(), "topic2".to_string()]);
+    /// ```
     pub fn new<T: IntoIterator<Item = String>>(filters: T) -> Self {
         let values: Vec<String> = filters.into_iter().collect();
 
@@ -104,10 +151,18 @@ impl TopicFilters {
         TopicFilters(values)
     }
 
+    /// Returns the number of topic filters in the `TopicFilters` instance.
+    /// ```rust
+    /// use mqute_codec::protocol::TopicFilters;
+    ///
+    /// let filters = TopicFilters::new(vec!["topic1".to_string(), "topic2".to_string()]);
+    /// assert_eq!(filters.len(), 2);
+    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    /// Decodes a `TopicFilters` instance from a byte buffer.
     pub(crate) fn decode(payload: &mut Bytes) -> Result<Self, Error> {
         let mut filters = Vec::with_capacity(1);
 
@@ -124,12 +179,14 @@ impl TopicFilters {
         Ok(TopicFilters(filters))
     }
 
+    /// Encodes the `TopicFilters` instance into a byte buffer.
     pub(crate) fn encode(&self, buf: &mut BytesMut) {
         self.0.iter().for_each(|filter| {
             encode_string(buf, filter);
         });
     }
 
+    /// Calculates the encoded length of the `TopicFilters` instance.
     pub(crate) fn encoded_len(&self) -> usize {
         self.0.iter().fold(0, |acc, filter| acc + 2 + filter.len())
     }
