@@ -1,13 +1,19 @@
+//! # PubComp Packet V4
+//!
+//! This module defines the `PubComp` packet, which is used in the MQTT protocol to acknowledge
+//! the completion of a QoS 2 message flow. The `PubComp` packet contains a packet ID to match it
+//! with the corresponding `PUBREL` packet.
+
 use super::util;
 use crate::protocol::PacketType;
 
-// Create 'PubComp' packet
+// Defines the `PubComp` packet for MQTT V4
 util::id_packet!(PubComp);
 
-// Implement decode
+// Implement the `Decode` trait for `PubComp`.
 util::id_packet_decode_impl!(PubComp, PacketType::PubComp);
 
-// Implement encode
+// Implement the `Encode` trait for `PubComp`.
 util::id_packet_encode_impl!(PubComp, PacketType::PubComp);
 
 #[cfg(test)]

@@ -1,3 +1,9 @@
+//! # ConnAck Packet V4
+//!
+//! This module defines the `ConnectReturnCode` enum and the `ConnAck` struct, which are used
+//! in the MQTT protocol to represent the result of a connection request and the corresponding
+//! acknowledgment packet.
+
 use crate::codec::util::decode_byte;
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::{FixedHeader, PacketType};
@@ -5,25 +11,29 @@ use crate::Error;
 use bit_field::BitField;
 use bytes::{BufMut, BytesMut};
 
+/// Represents the return codes for a connection attempt in the MQTT protocol.
+///
+/// The `ConnectReturnCode` enum is used in the `CONNACK` packet to indicate the result
+/// of a client's connection request.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u8)]
 pub enum ConnectReturnCode {
-    // Connection Accepted
+    /// Connection Accepted
     Success = 0,
 
-    // The Server does not support the level of the MQTT protocol requested by the Client
+    /// The Server does not support the level of the MQTT protocol requested by the Client
     UnacceptableProtocolVersion,
 
-    // The Client identifier is correct UTF-8 but not allowed by the Server
+    /// The Client identifier is correct UTF-8 but not allowed by the Server
     IdentifierRejected,
 
-    // The Network Connection has been made but the MQTT service is unavailable
+    /// The Network Connection has been made but the MQTT service is unavailable
     ServerUnavailable,
 
-    // The data in the username or password is malformed
+    /// The data in the username or password is malformed
     BadAuthData,
 
-    // The Client is not authorized to connect
+    /// The Client is not authorized to connect
     NotAuthorized,
 }
 
@@ -31,6 +41,7 @@ impl TryFrom<u8> for ConnectReturnCode {
     type Error = Error;
 
     fn try_from(value: u8) -> Result<Self, Self::Error> {
+        /// Converts a `u8` value into a `ConnectReturnCode`.
         let code = match value {
             0 => ConnectReturnCode::Success,
             1 => ConnectReturnCode::UnacceptableProtocolVersion,
@@ -46,11 +57,13 @@ impl TryFrom<u8> for ConnectReturnCode {
 }
 
 impl Into<u8> for ConnectReturnCode {
+    /// Converts a `ConnectReturnCode` into a `u8` value.
     fn into(self) -> u8 {
         self as u8
     }
 }
 
+/// Represents an MQTT `CONNACK` packet.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ConnAck {
     code: ConnectReturnCode,
@@ -58,23 +71,53 @@ pub struct ConnAck {
 }
 
 impl ConnAck {
-    fn new(code: ConnectReturnCode, session_present: bool) -> Self {
+    /// Creates a new `ConnAck` packet with the specified return code and session present flag.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{ConnectReturnCode, ConnAck};
+    ///
+    /// let connack = ConnAck::new(ConnectReturnCode::Success, true);
+    /// ```
+    pub fn new(code: ConnectReturnCode, session_present: bool) -> Self {
         ConnAck {
             code,
             session_present,
         }
     }
 
+    /// Returns the `ConnectReturnCode` contained in the `ConnAck` packet.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{ConnectReturnCode, ConnAck};
+    ///
+    /// let connack = ConnAck::new(ConnectReturnCode::Success, true);
+    /// assert_eq!(connack.code(), ConnectReturnCode::Success);
+    /// ```
     pub fn code(&self) -> ConnectReturnCode {
         self.code
     }
 
+    /// Returns the `session_present` flag from the `ConnAck` packet.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{ConnectReturnCode, ConnAck};
+    ///
+    /// let connack = ConnAck::new(ConnectReturnCode::Success, true);
+    /// assert_eq!(connack.session_present(), true);
+    /// ```
     pub fn session_present(&self) -> bool {
         self.session_present
     }
 }
 
 impl Decode for ConnAck {
+    /// Decodes a `ConnAck` packet from a raw MQTT packet.
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         if packet.header.packet_type() != PacketType::ConnAck || !packet.header.flags().is_default()
         {
@@ -94,6 +137,7 @@ impl Decode for ConnAck {
 }
 
 impl Encode for ConnAck {
+    /// Encodes the `ConnAck` packet into a byte buffer.
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         let header = FixedHeader::new(PacketType::ConnAck, self.payload_len());
         header.encode(buf)?;
@@ -101,14 +145,15 @@ impl Encode for ConnAck {
         let mut flags = 0u8;
         flags.set_bit(0, self.session_present);
 
-        // Write a session present flag
+        // Write the session present flag
         buf.put_u8(flags);
 
-        // Write a connect return code
+        // Write the connect return code
         buf.put_u8(self.code.into());
         Ok(())
     }
 
+    /// Returns the length of the `ConnAck` packet payload.
     fn payload_len(&self) -> usize {
         2
     }

@@ -1,3 +1,9 @@
+//! # PubRel Packet V4
+//!
+//! This module defines the `PubRel` packet, which is used in the MQTT protocol as part of the
+//! QoS 2 message flow. The `PubRel` packet is sent by the publisher to acknowledge the receipt
+//! of a `PUBREC` packet and to indicate that the message can be released to subscribers.
+
 use super::util;
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
@@ -5,10 +11,11 @@ use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
 use crate::Error;
 use bytes::BufMut;
 
-// Create 'PubRel' packet
+// Defines the `PubRel` packet for MQTT V4
 util::id_packet!(PubRel);
 
 impl Encode for PubRel {
+    /// Encodes the `PubRel` packet into a byte buffer.
     fn encode(&self, buf: &mut bytes::BytesMut) -> Result<(), Error> {
         let header = FixedHeader::with_flags(
             PacketType::PubRel,
@@ -21,12 +28,14 @@ impl Encode for PubRel {
         Ok(())
     }
 
+    /// Returns the length of the `PubRel` packet payload.
     fn payload_len(&self) -> usize {
         2
     }
 }
 
 impl Decode for PubRel {
+    /// Decodes a `PubRel` packet from a raw MQTT packet.
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         if packet.header.packet_type() != PacketType::PubRel
             || packet.header.flags() != Flags::new(QoS::AtLeastOnce)

@@ -1,13 +1,19 @@
+//! # UnsubAck Packet V4
+//!
+//! This module defines the `UnsubAck` packet, which is used in the MQTT protocol to acknowledge
+//! the receipt of an `UNSUBSCRIBE` packet. The `UnsubAck` packet contains a packet ID to match it
+//! with the corresponding `UNSUBSCRIBE` packet.
+
 use super::util;
 use crate::protocol::PacketType;
 
-// Create 'UnsubAck' packet
+// Defines the `UnsubAck` packet for MQTT V4
 util::id_packet!(UnsubAck);
 
-// Implement decode
+// Implement the `Decode` trait for `UnsubAck`.
 util::id_packet_decode_impl!(UnsubAck, PacketType::UnsubAck);
 
-// Implement encode
+// Implement the `Encode` trait for `UnsubAck`.
 util::id_packet_encode_impl!(UnsubAck, PacketType::UnsubAck);
 
 #[cfg(test)]

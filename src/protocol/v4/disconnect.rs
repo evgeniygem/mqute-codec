@@ -1,10 +1,20 @@
+//! # Disconnect Packet V4
+//!
+//! This module defines the `Disconnect` packet, which is used in the MQTT protocol to indicate
+//! that the client or server is disconnecting from the session. The `Disconnect` packet has no
+//! payload and is represented by a simple struct.
+
 use super::util;
 use crate::protocol::PacketType;
 
+/// Represents an MQTT `DISCONNECT` packet.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Disconnect {}
 
+// Implement the `Decode` trait for `Disconnect`.
 util::header_packet_decode_impl!(Disconnect, PacketType::Disconnect);
+
+// Implement the `Encode` trait for `Disconnect`.
 util::header_packet_encode_impl!(Disconnect, PacketType::Disconnect);
 
 #[cfg(test)]
