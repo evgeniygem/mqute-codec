@@ -7,6 +7,7 @@ use crate::protocol::common::connect;
 use crate::protocol::v4::{Propertyless, Will};
 use crate::protocol::Protocol;
 
+// Defines the `Connect` packet for MQTT V3
 connect!(Connect<Propertyless, Will>, Protocol::V3);
 
 #[cfg(test)]

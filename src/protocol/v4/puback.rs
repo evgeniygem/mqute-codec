@@ -1,13 +1,19 @@
+//! # PubAck Packet V4
+//!
+//! This module defines the `PubAck` packet, which is used in the MQTT protocol to acknowledge
+//! the receipt of a `PUBLISH` packet with QoS level 1. The `PubAck` packet contains a packet ID
+//! to match it with the corresponding `PUBLISH` packet.
+
 use super::util;
 use crate::protocol::PacketType;
 
-// Create 'PubAck' packet
+// Defines the `PubAck` packet for MQTT V4
 util::id_packet!(PubAck);
 
-// Implement decode
+// Implement the `Decode` trait for `PubAck`.
 util::id_packet_decode_impl!(PubAck, PacketType::PubAck);
 
-// Implement encode
+// Implement the `Encode` trait for `PubAck`.
 util::id_packet_encode_impl!(PubAck, PacketType::PubAck);
 
 #[cfg(test)]

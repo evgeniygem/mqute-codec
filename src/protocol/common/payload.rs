@@ -141,8 +141,8 @@ impl TopicFilters {
     ///
     /// let filters = TopicFilters::new(vec!["topic1".to_string(), "topic2".to_string()]);
     /// ```
-    pub fn new<T: IntoIterator<Item = String>>(filters: T) -> Self {
-        let values: Vec<String> = filters.into_iter().collect();
+    pub fn new<T: IntoIterator<Item: Into<String>>>(filters: T) -> Self {
+        let values: Vec<String> = filters.into_iter().map(|x| x.into()).collect();
 
         if values.is_empty() {
             panic!("At least one topic filter is required");

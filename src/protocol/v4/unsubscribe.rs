@@ -1,17 +1,41 @@
+//! # Unsubscribe Packet V4
+//!
+//! This module defines the `Unsubscribe` packet, which is used in the MQTT protocol to request
+//! the removal of one or more topic filters from a subscription. The `Unsubscribe` packet
+//! includes a packet ID and a list of topic filters.
+
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters};
 use crate::Error;
 use bytes::{BufMut, BytesMut};
 
+/// Represents an MQTT `UNSUBSCRIBE` packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unsubscribe {
+    /// The packet ID for the `UNSUBSCRIBE` packet.
     packet_id: u16,
+
+    /// The list of topic filters to unsubscribe from.
     filters: TopicFilters,
 }
 
 impl Unsubscribe {
-    pub fn new<T: IntoIterator<Item = String>>(packet_id: u16, filters: T) -> Self {
+    /// Creates a new `Unsubscribe` packet.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `packet_id` is zero.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::TopicFilters;
+    /// use mqute_codec::protocol::v4::Unsubscribe;
+    ///
+    /// let unsubscribe = Unsubscribe::new(123, vec!["topic1", "topic2"]);
+    /// ```
+    pub fn new<T: IntoIterator<Item: Into<String>>>(packet_id: u16, filters: T) -> Self {
         if packet_id == 0 {
             panic!("Packet id is zero");
         }
@@ -21,9 +45,42 @@ impl Unsubscribe {
             filters: TopicFilters::new(filters),
         }
     }
+
+    /// Returns the packet ID of the `UNSUBSCRIBE` packet.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::Unsubscribe;
+    ///
+    /// let filters = vec!["topic1", "topic2"];
+    /// let unsubscribe = Unsubscribe::new(123, filters);
+    /// assert_eq!(unsubscribe.packet_id(), 123);
+    /// ```
+    pub fn packet_id(&self) -> u16 {
+        self.packet_id
+    }
+
+    /// Returns the list of topic filters to unsubscribe from.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::Unsubscribe;
+    /// use mqute_codec::protocol::TopicFilters;
+    ///
+    /// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
+    ///
+    /// let unsubscribe = Unsubscribe::new(123, vec!["topic1".to_string(), "topic2".to_string()]);
+    /// assert_eq!(unsubscribe.filters(), filters);
+    /// ```
+    pub fn filters(&self) -> TopicFilters {
+        self.filters.clone()
+    }
 }
 
 impl Decode for Unsubscribe {
+    /// Decodes an `Unsubscribe` packet from a raw MQTT packet.
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         if packet.header.packet_type() != PacketType::Unsubscribe
             || packet.header.flags() != Flags::new(QoS::AtLeastOnce)
@@ -39,6 +96,7 @@ impl Decode for Unsubscribe {
 }
 
 impl Encode for Unsubscribe {
+    /// Encodes the `Unsubscribe` packet into a byte buffer.
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         let header = FixedHeader::with_flags(
             PacketType::Unsubscribe,
@@ -107,13 +165,13 @@ mod tests {
 
         assert_eq!(
             packet,
-            Unsubscribe::new(0x1234, vec!["hello world!".into(), "test".into()])
+            Unsubscribe::new(0x1234, vec!["hello world!", "test"])
         );
     }
 
     #[test]
     fn unsubscribe_encode() {
-        let packet = Unsubscribe::new(0x1234, vec!["hello world!".into(), "test".into()]);
+        let packet = Unsubscribe::new(0x1234, vec!["hello world!", "test"]);
 
         let mut stream = BytesMut::new();
         packet.encode(&mut stream).unwrap();

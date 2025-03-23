@@ -1,13 +1,19 @@
+//! # PubRec Packet V4
+//!
+//! This module defines the `PubRec` packet, which is used in the MQTT protocol to acknowledge
+//! the receipt of a `PUBLISH` packet with QoS level 2. The `PubRec` packet contains a packet ID
+//! to match it with the corresponding `PUBLISH` packet.
+
 use super::util;
 use crate::protocol::PacketType;
 
-// Create 'PubRec' packet
+// Defines the `PubRec` packet for MQTT V4
 util::id_packet!(PubRec);
 
-// Implement decode
+// Implement the `Decode` trait for `PubRec`.
 util::id_packet_decode_impl!(PubRec, PacketType::PubRec);
 
-// Implement encode
+// Implement the `Encode` trait for `PubRec`.
 util::id_packet_encode_impl!(PubRec, PacketType::PubRec);
 
 #[cfg(test)]

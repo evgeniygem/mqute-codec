@@ -1,16 +1,35 @@
+//! # PingReq and PingResp Packets V4
+//!
+//! This module defines the `PingReq` and `PingResp` packets, which are used in the MQTT protocol
+//! for connection keep-alive and heartbeat functionality. Both packets have no payload and are
+//! represented by simple structs.
+
 use super::util;
 use crate::protocol::PacketType;
 
+/// Represents an MQTT `PINGREQ` packet.
+///
+/// The `PingReq` packet is sent by the client to the server to indicate that the connection
+/// is still alive.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingReq {}
 
+// Implement the `Decode` trait for `PingReq`.
 util::header_packet_decode_impl!(PingReq, PacketType::PingReq);
+
+// Implement the `Encode` trait for `PingReq`.
 util::header_packet_encode_impl!(PingReq, PacketType::PingReq);
 
+/// Represents an MQTT `PINGRESP` packet.
+///
+/// The `PingResp` packet is sent by the server to the client in response to a `PINGREQ` packet.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingResp {}
 
+// Implement the `Decode` trait for `PingResp`.
 util::header_packet_decode_impl!(PingResp, PacketType::PingResp);
+
+// Implement the `Encode` trait for `PingResp`.
 util::header_packet_encode_impl!(PingResp, PacketType::PingResp);
 
 #[cfg(test)]

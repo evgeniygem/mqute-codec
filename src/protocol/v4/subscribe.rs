@@ -1,3 +1,9 @@
+//! # Subscribe Packet V4
+//!
+//! This module defines the `Subscribe` packet and related structures (`TopicQosFilter` and
+//! `TopicQosFilters`) used in the MQTT protocol to handle subscription requests. The `Subscribe`
+//! packet contains a list of topic filters and their requested QoS levels.
+
 use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
@@ -5,13 +11,29 @@ use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 
+/// Represents a single topic filter and its requested QoS level.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicQosFilter {
+    /// The topic filter for the subscription.
     pub topic: String,
+
+    /// The requested QoS level for the subscription.
     pub qos: QoS,
 }
 
 impl TopicQosFilter {
+    /// Creates a new `TopicQosFilter` instance.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::TopicQosFilter;
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let filter = TopicQosFilter::new("topic1", QoS::AtLeastOnce);
+    /// assert_eq!(filter.topic, "topic1");
+    /// assert_eq!(filter.qos, QoS::AtLeastOnce);
+    /// ```
     pub fn new<T: Into<String>>(topic: T, qos: QoS) -> Self {
         Self {
             topic: topic.into(),
@@ -20,10 +42,30 @@ impl TopicQosFilter {
     }
 }
 
+/// Represents a collection of `TopicQosFilter` instances.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicQosFilters(Vec<TopicQosFilter>);
 
 impl TopicQosFilters {
+    /// Creates a new `TopicQosFilters` instance from an iterator of `TopicQosFilter`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the iterator is empty, as at least one topic filter is required.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilters, TopicQosFilter};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let filters = vec![
+    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+    /// ];
+    /// let topic_filters = TopicQosFilters::new(filters);
+    /// assert_eq!(topic_filters.len(), 2);
+    /// ```
     pub fn new<T: IntoIterator<Item = TopicQosFilter>>(filters: T) -> Self {
         let values: Vec<TopicQosFilter> = filters.into_iter().collect();
 
@@ -34,10 +76,12 @@ impl TopicQosFilters {
         TopicQosFilters(values)
     }
 
+    /// Returns `true` if the collection of topic filters is empty.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
 
+    /// Returns the number of topic filters in the collection.
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -118,13 +162,36 @@ impl From<Vec<TopicQosFilter>> for TopicQosFilters {
     }
 }
 
+/// Represents an MQTT `SUBSCRIBE` packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subscribe {
+    /// The packet ID for the `SUBSCRIBE` packet.
     packet_id: u16,
+
+    /// The list of topic filters and their requested QoS levels.
     filters: TopicQosFilters,
 }
 
 impl Subscribe {
+    /// Creates a new `Subscribe` packet.
+    ///
+    /// # Panics
+    ///
+    /// Panics if `packet_id` is zero.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilter};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let filters = vec![
+    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+    /// ];
+    /// let subscribe = Subscribe::new(123, filters);
+    /// assert_eq!(subscribe.packet_id(), 123);
+    /// ```
     pub fn new<T: IntoIterator<Item = TopicQosFilter>>(packet_id: u16, filters: T) -> Self {
         if packet_id == 0 {
             panic!("Packet id is zero");
@@ -133,9 +200,48 @@ impl Subscribe {
         let filters = filters.into_iter().collect();
         Subscribe { packet_id, filters }
     }
+
+    /// Returns the packet ID of the `SUBSCRIBE` packet.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilter};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let filters = vec![
+    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+    /// ];
+    /// let subscribe = Subscribe::new(123, filters);
+    /// assert_eq!(subscribe.packet_id(), 123);
+    /// ```
+    pub fn packet_id(&self) -> u16 {
+        self.packet_id
+    }
+
+    /// Returns the list of topic filters and their requested QoS levels.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilter};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let filters = vec![
+    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+    /// ];
+    /// let subscribe = Subscribe::new(123, filters);
+    /// assert_eq!(subscribe.filters().len(), 2);
+    /// ```
+    pub fn filters(&self) -> TopicQosFilters {
+        self.filters.clone()
+    }
 }
 
 impl Decode for Subscribe {
+    /// Decodes a `Subscribe` packet from a raw MQTT packet.
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         // Validate header flags
         if packet.header.packet_type() != PacketType::Subscribe
@@ -152,6 +258,7 @@ impl Decode for Subscribe {
 }
 
 impl Encode for Subscribe {
+    /// Encodes the `Subscribe` packet into a byte buffer.
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         let header = FixedHeader::with_flags(
             PacketType::Subscribe,
@@ -165,6 +272,7 @@ impl Encode for Subscribe {
         Ok(())
     }
 
+    /// Returns the length of the `Subscribe` packet payload.
     fn payload_len(&self) -> usize {
         // Packet ID and filter list
         2 + self.filters.encoded_len()

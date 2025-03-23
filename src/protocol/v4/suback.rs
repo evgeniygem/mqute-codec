@@ -1,16 +1,26 @@
+//! # SubAck Packet V4
+//!
+//! This module initializes the `SubAck` packet for MQTT protocol.
+//! It uses the `suback!` macro to define the `SubAck` packet structure.
+
 use crate::protocol::common::suback;
 use crate::protocol::QoS;
 use crate::Error;
 
+/// Represents the return codes for a `SUBACK` packet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReturnCode {
+    /// Indicates a successful subscription with the granted QoS level.
     Success(QoS),
+
+    /// Indicates that the subscription failed.
     Failure,
 }
 
 impl TryFrom<u8> for ReturnCode {
     type Error = Error;
 
+    /// Converts a `u8` value into a `ReturnCode`.
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         let code = match value {
             0x0 => ReturnCode::Success(QoS::AtMostOnce),
@@ -25,6 +35,7 @@ impl TryFrom<u8> for ReturnCode {
 }
 
 impl Into<u8> for ReturnCode {
+    /// Converts a `ReturnCode` into a `u8` value.
     fn into(self) -> u8 {
         match self {
             ReturnCode::Success(qos) => qos as u8,
@@ -33,6 +44,7 @@ impl Into<u8> for ReturnCode {
     }
 }
 
+// Defines the `SubAck` packet
 suback!(SubAck, ReturnCode);
 
 #[cfg(test)]

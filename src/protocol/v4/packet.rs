@@ -1,3 +1,9 @@
+//! # MQTT Packet V4
+//!
+//! This module defines the `Packet` enum, which represents all possible MQTT packet types
+//! for the MQTT v4 (3.1.1) protocol. The `packet!` macro is used to generate the `Packet` enum
+//! and its associated methods for encoding and decoding.
+
 use crate::protocol::common::util::packet;
 
 use super::{
@@ -5,7 +11,9 @@ use super::{
     SubAck, Subscribe, UnsubAck, Unsubscribe,
 };
 
-// Implement V4 packet
+/// Represents all MQTT packet types for MQTT v4 (3.1.1).
+// The `Packet` enum is generated using the `packet!` macro and includes variants for each
+// MQTT packet type.
 packet!(
     Packet,
     Connect,
