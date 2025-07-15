@@ -1,3 +1,10 @@
+//! # Connect Packet V5
+//!
+//! This module provides the complete implementation of the MQTT v5 Connect packet,
+//! including its properties, will message handling, and authentication support.
+//! The Connect packet is the first packet sent by a client to initiate a connection
+//! with an MQTT broker.
+
 use super::property::{property_decode, property_decode_non_zero, property_encode};
 use super::property::{property_len, Property, PropertyFrame};
 use crate::codec::util::{
@@ -13,24 +20,39 @@ use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
 use std::ops::RangeInclusive;
 
+/// Bit flag positions for Connect packet flags
 const WILL_FLAG: usize = 2;
 const WILL_QOS: RangeInclusive<usize> = 3..=4;
 const WILL_RETAIN: usize = 5;
 
+/// Represents the properties of a Connect packet in MQTT v5.
+///
+/// These properties provide extended functionality beyond the basic connection
+/// parameters, including session management, flow control, and authentication.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ConnectProperties {
+    /// Duration in seconds after which the session expires
     pub session_expiry_interval: Option<u32>,
+    /// Maximum number of QoS 1 and 2 publishes the client will process
     pub receive_maximum: Option<u16>,
+    /// Maximum packet size the client will accept
     pub maximum_packet_size: Option<u32>,
+    /// Highest value the client will accept as a topic alias
     pub topic_alias_maximum: Option<u16>,
+    /// Whether the server should include response information
     pub request_response_info: Option<bool>,
+    /// Whether the server should include reason strings
     pub request_problem_info: Option<bool>,
+    /// User-defined key-value properties
     pub user_properties: Vec<(String, String)>,
+    /// Authentication method name
     pub auth_method: Option<String>,
+    /// Authentication data
     pub auth_data: Option<Bytes>,
 }
 
 impl PropertyFrame for ConnectProperties {
+    /// Calculates the encoded length of the properties
     fn encoded_len(&self) -> usize {
         let mut len = 0;
 
@@ -47,6 +69,7 @@ impl PropertyFrame for ConnectProperties {
         len
     }
 
+    /// Encodes the properties into a byte buffer
     fn encode(&self, buf: &mut BytesMut) {
         property_encode!(
             &self.session_expiry_interval,
@@ -71,74 +94,58 @@ impl PropertyFrame for ConnectProperties {
         property_encode!(&self.auth_data, Property::AuthenticationData, buf);
     }
 
+    /// Decodes properties from a byte buffer
     fn decode(buf: &mut Bytes) -> Result<Option<Self>, Error> {
         if buf.is_empty() {
             return Ok(None);
         }
 
-        let mut session_expiry_interval: Option<u32> = None;
-        let mut receive_maximum: Option<u16> = None;
-        let mut maximum_packet_size: Option<u32> = None;
-        let mut topic_alias_maximum: Option<u16> = None;
-        let mut request_response_info: Option<bool> = None;
-        let mut request_problem_info: Option<bool> = None;
-        let mut user_properties: Vec<(String, String)> = Vec::new();
-        let mut auth_method: Option<String> = None;
-        let mut auth_data: Option<Bytes> = None;
+        let mut properties = ConnectProperties::default();
 
         while buf.has_remaining() {
             let property: Property = decode_byte(buf)?.try_into()?;
             match property {
                 Property::SessionExpiryInterval => {
-                    property_decode!(&mut session_expiry_interval, buf);
+                    property_decode!(&mut properties.session_expiry_interval, buf);
                 }
                 Property::ReceiveMaximum => {
-                    property_decode_non_zero!(&mut receive_maximum, buf);
+                    property_decode_non_zero!(&mut properties.receive_maximum, buf);
                 }
                 Property::MaximumPacketSize => {
-                    property_decode_non_zero!(&mut maximum_packet_size, buf);
+                    property_decode_non_zero!(&mut properties.maximum_packet_size, buf);
                 }
                 Property::TopicAliasMaximum => {
-                    property_decode!(&mut topic_alias_maximum, buf);
+                    property_decode!(&mut properties.topic_alias_maximum, buf);
                 }
                 Property::RequestResponseInformation => {
-                    property_decode!(&mut request_response_info, buf);
+                    property_decode!(&mut properties.request_response_info, buf);
                 }
                 Property::RequestProblemInformation => {
-                    property_decode!(&mut request_problem_info, buf);
+                    property_decode!(&mut properties.request_problem_info, buf);
                 }
                 Property::UserProperty => {
-                    property_decode!(&mut user_properties, buf);
+                    property_decode!(&mut properties.user_properties, buf);
                 }
                 Property::AuthenticationMethod => {
-                    property_decode!(&mut auth_method, buf);
+                    property_decode!(&mut properties.auth_method, buf);
                 }
                 Property::AuthenticationData => {
-                    property_decode!(&mut auth_data, buf);
+                    property_decode!(&mut properties.auth_data, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
             };
         }
 
-        if auth_data.is_some() && auth_method.is_none() {
+        if properties.auth_data.is_some() && properties.auth_method.is_none() {
             return Err(Error::ProtocolError);
         }
 
-        Ok(Some(ConnectProperties {
-            session_expiry_interval,
-            receive_maximum,
-            maximum_packet_size,
-            topic_alias_maximum,
-            request_response_info,
-            request_problem_info,
-            user_properties,
-            auth_method,
-            auth_data,
-        }))
+        Ok(Some(properties))
     }
 }
 
 impl ConnectFrame for ConnectHeader<ConnectProperties> {
+    /// Calculates the encoded length of the Connect header
     fn encoded_len(&self) -> usize {
         let properties_len = self
             .properties
@@ -148,8 +155,8 @@ impl ConnectFrame for ConnectHeader<ConnectProperties> {
         properties_len + len_bytes(properties_len) + self.primary_encoded_len()
     }
 
+    /// Encodes the Connect header into a byte buffer
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
-        // Encode protocol name, level, flags, keep alive
         self.primary_encode(buf);
 
         let properties_len = self
@@ -158,21 +165,16 @@ impl ConnectFrame for ConnectHeader<ConnectProperties> {
             .map(|properties| properties.encoded_len())
             .unwrap_or(0) as u32;
 
-        // Encode properties len
         encode_variable_integer(buf, properties_len)?;
 
-        // Encode properties
         if let Some(properties) = self.properties.as_ref() {
             properties.encode(buf);
         }
         Ok(())
     }
 
-    fn decode(buf: &mut Bytes) -> Result<Self, Error>
-    where
-        Self: Sized,
-    {
-        // Decode protocol name, level, flags, keep alive without properties
+    /// Decodes a Connect header from a byte buffer
+    fn decode(buf: &mut Bytes) -> Result<Self, Error> {
         let mut header = Self::primary_decode(buf)?;
 
         let properties_len = decode_variable_integer(buf)? as usize;
@@ -192,18 +194,30 @@ impl ConnectFrame for ConnectHeader<ConnectProperties> {
     }
 }
 
+/// Represents the properties of a Will message in MQTT v5.
+///
+/// These properties provide extended functionality for the last will and testament
+/// message, including delivery timing, content format, and correlation data.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct WillProperties {
+    /// Delay before sending the Will message after connection loss
     pub delay_interval: Option<u32>,
+    /// Format of the Will message payload (0=bytes, 1=UTF-8)
     pub payload_format_indicator: Option<u8>,
+    /// Lifetime of the Will message in seconds
     pub message_expiry_interval: Option<u32>,
+    /// Content type descriptor (MIME type)
     pub content_type: Option<String>,
+    /// Topic name for the response message
     pub response_topic: Option<String>,
+    /// Correlation data for the response message
     pub correlation_data: Option<Bytes>,
+    /// User-defined key-value properties
     pub user_properties: Vec<(String, String)>,
 }
 
 impl PropertyFrame for WillProperties {
+    /// Calculates the encoded length of the Will properties
     fn encoded_len(&self) -> usize {
         let mut len = 0;
 
@@ -218,6 +232,7 @@ impl PropertyFrame for WillProperties {
         len
     }
 
+    /// Encodes the Will properties into a byte buffer
     fn encode(&self, buf: &mut BytesMut) {
         property_encode!(&self.delay_interval, Property::WillDelayInterval, buf);
         property_encode!(
@@ -236,74 +251,71 @@ impl PropertyFrame for WillProperties {
         property_encode!(&self.user_properties, Property::UserProperty, buf);
     }
 
+    /// Decodes Will properties from a byte buffer
     fn decode(buf: &mut Bytes) -> Result<Option<Self>, Error> {
         if buf.is_empty() {
             return Ok(None);
         }
 
-        let mut delay_interval: Option<u32> = None;
-        let mut payload_format_indicator: Option<u8> = None;
-        let mut message_expiry_interval: Option<u32> = None;
-        let mut content_type: Option<String> = None;
-        let mut response_topic: Option<String> = None;
-        let mut correlation_data: Option<Bytes> = None;
-        let mut user_properties: Vec<(String, String)> = Vec::new();
+        let mut properties = WillProperties::default();
 
         while buf.has_remaining() {
             let property: Property = decode_byte(buf)?.try_into()?;
             match property {
                 Property::WillDelayInterval => {
-                    property_decode!(&mut delay_interval, buf);
+                    property_decode!(&mut properties.delay_interval, buf);
                 }
                 Property::PayloadFormatIndicator => {
-                    property_decode!(&mut payload_format_indicator, buf);
-                    if let Some(value) = payload_format_indicator {
+                    property_decode!(&mut properties.payload_format_indicator, buf);
+                    if let Some(value) = properties.payload_format_indicator {
                         if value != 0 && value != 1 {
                             return Err(Error::ProtocolError);
                         }
                     }
                 }
                 Property::MessageExpiryInterval => {
-                    property_decode!(&mut message_expiry_interval, buf);
+                    property_decode!(&mut properties.message_expiry_interval, buf);
                 }
                 Property::ContentType => {
-                    property_decode!(&mut content_type, buf);
+                    property_decode!(&mut properties.content_type, buf);
                 }
                 Property::ResponseTopic => {
-                    property_decode!(&mut response_topic, buf);
+                    property_decode!(&mut properties.response_topic, buf);
                 }
                 Property::CorrelationData => {
-                    property_decode!(&mut correlation_data, buf);
+                    property_decode!(&mut properties.correlation_data, buf);
                 }
                 Property::UserProperty => {
-                    property_decode!(&mut user_properties, buf);
+                    property_decode!(&mut properties.user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
             }
         }
 
-        Ok(Some(WillProperties {
-            delay_interval,
-            payload_format_indicator,
-            message_expiry_interval,
-            content_type,
-            response_topic,
-            correlation_data,
-            user_properties,
-        }))
+        Ok(Some(properties))
     }
 }
 
+/// Represents a Will message in MQTT v5.
+///
+/// The Will message is published by the broker when the client disconnects
+/// unexpectedly. It includes the message content, delivery options, and properties.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Will {
+    /// Will message properties
     pub properties: Option<WillProperties>,
+    /// Topic name to publish the Will message to
     pub topic: String,
+    /// Will message payload
     pub payload: Bytes,
+    /// Quality of Service level for the Will message
     pub qos: QoS,
+    /// Whether the Will message should be retained
     pub retain: bool,
 }
 
 impl WillFrame for Will {
+    /// Calculates the encoded length of the Will message
     fn encoded_len(&self) -> usize {
         let properties_len = self
             .properties
@@ -314,6 +326,7 @@ impl WillFrame for Will {
         2 + self.topic.len() + 2 + self.payload.len() + len_bytes(properties_len) + properties_len
     }
 
+    /// Updates the Connect packet flags based on Will message settings
     fn update_flags(&self, flags: &mut u8) {
         // Update the 'Will' flag
         flags.set_bit(WILL_FLAG, true);
@@ -325,6 +338,7 @@ impl WillFrame for Will {
         flags.set_bit(WILL_RETAIN, self.retain);
     }
 
+    /// Encodes the Will message into a byte buffer
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         let properties_len = self
             .properties
@@ -343,6 +357,7 @@ impl WillFrame for Will {
         Ok(())
     }
 
+    /// Decodes a Will message from a byte buffer
     fn decode(buf: &mut Bytes, flags: u8) -> Result<Option<Self>, Error> {
         if !flags.get_bit(WILL_FLAG) {
             // No 'Will'
@@ -374,9 +389,27 @@ impl WillFrame for Will {
     }
 }
 
+// Defines the `Connect` packet for MQTT V5
 connect!(Connect<ConnectProperties, Will>, Protocol::V5);
 
 impl Connect {
+    /// Creates a new Connect packet with properties
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
+    /// use std::time::Duration;
+    ///
+    /// let connect = Connect::with_properties(
+    ///     "client",
+    ///     None,
+    ///     None,
+    ///     ConnectProperties::default(),
+    ///     Duration::from_secs(30).as_secs() as u16,
+    ///     true,
+    /// );
+    /// ```
     pub fn with_properties<S: Into<String>>(
         client_id: S,
         auth: Option<Auth>,
@@ -395,6 +428,28 @@ impl Connect {
         )
     }
 
+    /// Returns the Connect properties if present
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use bytes::Bytes;
+    /// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
+    ///
+    /// let properties = ConnectProperties {
+    ///     session_expiry_interval: Some(3600),
+    ///     ..Default::default()
+    /// };
+    ///
+    /// let client = Connect::with_properties(
+    ///     "client",
+    ///     None,
+    ///     None,
+    ///     properties.clone(),
+    ///     30,
+    ///     true);
+    /// assert_eq!(client.properties(), Some(properties));
+    /// ```
     pub fn properties(&self) -> Option<ConnectProperties> {
         self.header.properties.clone()
     }

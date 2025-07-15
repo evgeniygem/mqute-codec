@@ -1,3 +1,9 @@
+//! # Disconnect Packet - MQTT v5
+//!
+//! This module implements the MQTT v5 `Disconnect` packet, which is used to gracefully
+//! terminate a connection between client and server. The `Disconnect` packet can include
+//! a reason code and optional properties to provide additional context for the disconnection.
+
 use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_integer};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
@@ -9,19 +15,33 @@ use crate::protocol::{FixedHeader, PacketType};
 use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
+/// Validates reason codes for `Disconnect` packets
+///
+/// MQTT v5 specifies the following valid reason codes:
+/// - 0x00 (Normal Disconnection)
+/// - 0x04 (Disconnect With Will Message)
+/// - 0x80-0x83 (Various error conditions)
+/// - 0x87-0x93 (Protocol and implementation errors)
+/// - 0x97-0xA2 (Administrative and policy violations)
 fn validate_disconnect_reason_code(code: ReasonCode) -> bool {
     matches!(code.into(), 0 | 4 | 128..=131 | 135 | 137 | 139 | 141..=144 | 147..=162)
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// Represents properties of a `Disconnect` packet
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct DisconnectProperties {
+    /// Duration in seconds until session expires
     pub session_expiry_interval: Option<u32>,
+    /// Human-readable disconnection reason
     pub reason_string: Option<String>,
+    /// User-defined key-value properties
     pub user_properties: Vec<(String, String)>,
+    /// Alternative server reference (for redirection)
     pub server_reference: Option<String>,
 }
 
 impl PropertyFrame for DisconnectProperties {
+    /// Calculates the encoded length of the properties
     fn encoded_len(&self) -> usize {
         let mut len = 0usize;
 
@@ -33,6 +53,7 @@ impl PropertyFrame for DisconnectProperties {
         len
     }
 
+    /// Encodes the properties into a byte buffer
     fn encode(&self, buf: &mut BytesMut) {
         property_encode!(
             &self.session_expiry_interval,
@@ -45,6 +66,7 @@ impl PropertyFrame for DisconnectProperties {
         property_encode!(&self.server_reference, Property::ServerReference, buf);
     }
 
+    /// Decodes properties from a byte buffer
     fn decode(buf: &mut Bytes) -> Result<Option<Self>, Error>
     where
         Self: Sized,
@@ -174,28 +196,63 @@ impl DisconnectHeader {
     }
 }
 
+/// Represents an MQTT v5 `Disconnect` packet
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Disconnect {
     header: DisconnectHeader,
 }
 
 impl Disconnect {
+    /// Creates a new `Disconnect` packet
+    ///
+    /// # Example
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Disconnect, DisconnectProperties, ReasonCode};
+    ///
+    /// let disconnect = Disconnect::new(ReasonCode::ServerShuttingDown, None);
+    /// ```
     pub fn new(code: ReasonCode, properties: Option<DisconnectProperties>) -> Self {
         Disconnect {
             header: DisconnectHeader::new(code, properties),
         }
     }
 
+    /// Returns the reason code
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Disconnect, ReasonCode};
+    ///
+    /// let disconnect = Disconnect::new(ReasonCode::NormalDisconnection, None);
+    /// assert_eq!(disconnect.code(), ReasonCode::NormalDisconnection);
+    /// ```
     pub fn code(&self) -> ReasonCode {
         self.header.code
     }
 
+    /// Returns a copy of the properties (if any)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Disconnect, DisconnectProperties, ReasonCode};
+    ///
+    /// let properties = DisconnectProperties {
+    ///     reason_string: Some("Reason string".to_string()),
+    ///     server_reference: Some("backup.example.com".to_string()),
+    ///     ..Default::default()
+    /// };
+    /// let disconnect = Disconnect::new(ReasonCode::Success, Some(properties.clone()));
+    /// assert_eq!(disconnect.properties(), Some(properties));
+    /// ```
     pub fn properties(&self) -> Option<DisconnectProperties> {
         self.header.properties.clone()
     }
 }
 
 impl Encode for Disconnect {
+    /// Encodes the `Disconnect` packet into a byte buffer
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         let header = FixedHeader::new(PacketType::Disconnect, self.payload_len());
         header.encode(buf)?;
@@ -203,12 +260,14 @@ impl Encode for Disconnect {
         self.header.encode(buf)
     }
 
+    /// Calculates the payload length
     fn payload_len(&self) -> usize {
         self.header.encoded_len()
     }
 }
 
 impl Decode for Disconnect {
+    /// Decodes a `Disconnect` packet from raw bytes
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         if packet.header.packet_type() != PacketType::Disconnect
             || !packet.header.flags().is_default()
