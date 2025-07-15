@@ -10,7 +10,7 @@ use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters};
 use crate::Error;
 use bytes::{BufMut, BytesMut};
 
-/// Represents an MQTT `UNSUBSCRIBE` packet.
+// Represents an MQTT `UNSUBSCRIBE` packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unsubscribe {
     /// The packet ID for the `UNSUBSCRIBE` packet.
@@ -181,6 +181,6 @@ mod tests {
     #[test]
     #[should_panic]
     fn unsubscribe_construct() {
-        Unsubscribe::new(0, vec![]);
+        Unsubscribe::new(0, Vec::<String>::new());
     }
 }

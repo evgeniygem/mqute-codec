@@ -40,8 +40,8 @@ pub enum ConnectReturnCode {
 impl TryFrom<u8> for ConnectReturnCode {
     type Error = Error;
 
+    /// Converts a `u8` value into a `ConnectReturnCode`.
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        /// Converts a `u8` value into a `ConnectReturnCode`.
         let code = match value {
             0 => ConnectReturnCode::Success,
             1 => ConnectReturnCode::UnacceptableProtocolVersion,
