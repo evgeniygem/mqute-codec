@@ -66,15 +66,6 @@ where
     }
 
     /// Returns the number of codes in the `Codes` instance.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::Codes;
-    ///
-    /// let codes: Codes<u8> = Codes::new(vec![0x01, 0x02, 0x03]);
-    /// assert_eq!(codes.len(), 3);
-    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
