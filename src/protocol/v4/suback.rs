@@ -7,7 +7,7 @@ use crate::protocol::common::suback;
 use crate::protocol::QoS;
 use crate::Error;
 
-/// Represents the return codes for a `SUBACK` packet.
+/// Represents the return codes for a `SubAck` packet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReturnCode {
     /// Indicates a successful subscription with the granted QoS level.

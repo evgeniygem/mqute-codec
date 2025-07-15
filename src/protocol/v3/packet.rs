@@ -13,7 +13,7 @@ use crate::protocol::v4::{
 
 use super::{ConnAck, Connect, SubAck};
 
-/// Represents an MQTT v3 (3.1) packet.
+// Represents an MQTT v3 (3.1) packet.
 // The `Packet` enum encapsulates all MQTT packet types supported in the v3 protocol.
 // It is generated using the `packet!` macro, which provides methods for encoding and decoding
 // MQTT packets.

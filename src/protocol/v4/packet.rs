@@ -11,7 +11,7 @@ use super::{
     SubAck, Subscribe, UnsubAck, Unsubscribe,
 };
 
-/// Represents all MQTT packet types for MQTT v4 (3.1.1).
+// Represents all MQTT packet types for MQTT v4 (3.1.1).
 // The `Packet` enum is generated using the `packet!` macro and includes variants for each
 // MQTT packet type.
 packet!(
