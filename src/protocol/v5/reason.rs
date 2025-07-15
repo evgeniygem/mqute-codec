@@ -1,56 +1,122 @@
+//! # MQTT Reason Codes V5
+//!
+//! This module defines the `ReasonCode` enum, which represents all possible reason codes
+//! used in MQTT v5 protocol packets. Reason codes provide detailed information about
+//! the result of operations or the cause of disconnections.
+
 use crate::Error;
 use std::fmt::{Display, Formatter};
 
+/// Represents all possible reason codes in MQTT v5 protocol.
+///
+/// Reason codes are used in various MQTT packets to indicate the result of operations
+/// or the reason for disconnections. Each variant corresponds to a specific numeric code
+/// as defined in the MQTT v5 specification.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ReasonCode {
+    /// Success (0x00)
     Success,
+    /// Normal disconnection (0x00)
     NormalDisconnection,
+    /// Granted QoS 0 (0x00)
     GrantedQos0,
+    /// Granted QoS 1 (0x01)
     GrantedQos1,
+    /// Granted QoS 2 (0x02)
     GrantedQos2,
+    /// Disconnect with Will Message (0x04)
     DisconnectWithWillMessage,
+    /// No matching subscribers (0x10)
     NoMatchingSubscribers,
+    /// No subscription existed (0x11)
     NoSubscriptionExisted,
+    /// Continue authentication (0x18)
     ContinueAuthentication,
+    /// Re-authenticate (0x19)
     ReAuthenticate,
+    /// Unspecified error (0x80)
     UnspecifiedError,
+    /// Malformed Packet (0x81)
     MalformedPacket,
+    /// Protocol Error (0x82)
     ProtocolError,
+    /// Implementation specific error (0x83)
     ImplementationSpecificError,
+    /// Unsupported Protocol Version (0x84)
     UnsupportedProtocolVersion,
+    /// Client Identifier not valid (0x85)
     ClientIdentifierNotValid,
+    /// Bad User Name or Password (0x86)
     BadUserNameOrPassword,
+    /// Not authorized (0x87)
     NotAuthorized,
+    /// Server unavailable (0x88)
     ServerUnavailable,
+    /// Server busy (0x89)
     ServerBusy,
+    /// Banned (0x8A)
     Banned,
+    /// Server shutting down (0x8B)
     ServerShuttingDown,
+    /// Bad authentication method (0x8C)
     BadAuthenticationMethod,
+    /// Keep Alive timeout (0x8D)
     KeepAliveTimeout,
+    /// Session taken over (0x8E)
     SessionTakenOver,
+    /// Topic Filter invalid (0x8F)
     TopicFilterInvalid,
+    /// Topic Name invalid (0x90)
     TopicNameInvalid,
+    /// Packet Identifier in use (0x91)
     PacketIdentifierInUse,
+    /// Packet Identifier not found (0x92)
     PacketIdentifierNotFound,
+    /// Receive Maximum exceeded (0x93)
     ReceiveMaximumExceeded,
+    /// Topic Alias invalid (0x94)
     TopicAliasInvalid,
+    /// Packet too large (0x95)
     PacketTooLarge,
+    /// Message rate too high (0x96)
     MessageRateTooHigh,
+    /// Quota exceeded (0x97)
     QuotaExceeded,
+    /// Administrative action (0x98)
     AdministrativeAction,
+    /// Payload format invalid (0x99)
     PayloadFormatInvalid,
+    /// Retain not supported (0x9A)
     RetainNotSupported,
+    /// QoS not supported (0x9B)
     QosNotSupported,
+    /// Use another server (0x9C)
     UseAnotherServer,
+    /// Server moved (0x9D)
     ServerMoved,
+    /// Shared Subscriptions not supported (0x9E)
     SharedSubscriptionsNotSupported,
+    /// Connection rate exceeded (0x9F)
     ConnectionRateExceeded,
+    /// Maximum connect time (0xA0)
     MaximumConnectTime,
+    /// Subscription Identifiers not supported (0xA1)
     SubscriptionIdentifiersNotSupported,
+    /// Wildcard Subscriptions not supported (0xA2)
     WildcardSubscriptionsNotSupported,
 }
 
 impl Into<u8> for ReasonCode {
+    /// Converts a `ReasonCode` to its numeric representation.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::ReasonCode;
+    ///
+    /// let code: u8 = ReasonCode::GrantedQos1.into();
+    /// assert_eq!(code, 1);
+    /// ```
     fn into(self) -> u8 {
         match self {
             Self::Success => 0,
@@ -105,6 +171,16 @@ impl Into<u8> for ReasonCode {
 impl TryFrom<u8> for ReasonCode {
     type Error = Error;
 
+    /// Attempts to convert a numeric value to a `ReasonCode`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::ReasonCode;
+    ///
+    /// let code = ReasonCode::try_from(0x85).unwrap();
+    /// assert_eq!(code, ReasonCode::ClientIdentifierNotValid);
+    /// ```
     fn try_from(value: u8) -> Result<Self, Self::Error> {
         let code = match value {
             0 => Self::Success,
@@ -158,6 +234,16 @@ impl TryFrom<u8> for ReasonCode {
 }
 
 impl Display for ReasonCode {
+    /// Provides human-readable display for reason codes.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::ReasonCode;
+    /// let str = format!("{}", ReasonCode::ProtocolError);
+    /// let text = "Protocol Error".to_string();
+    /// assert_eq!(text, str);
+    /// ```
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match *self {
             ReasonCode::Success => write!(f, "Success"),

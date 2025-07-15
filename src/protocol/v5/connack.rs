@@ -1,3 +1,10 @@
+//! # ConnAck Packet V5
+//!
+//! This module defines the `ConnAck` packet, which is sent by the server in response to a
+//! `Connect` packet from a client in the MQTT v5 protocol. The `ConnAck` packet indicates
+//! the result of the connection attempt and includes session status and optional properties
+//! for session configuration and server capabilities.
+
 use super::property::{
     property_decode, property_decode_non_zero, property_encode, property_len, Property,
     PropertyFrame,
@@ -11,28 +18,50 @@ use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
+/// Represents the properties of the `ConnAck` packet.
+///
+/// These properties provide additional connection-related information from the server
+/// to the client, including session configuration and server capabilities.
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ConnAckProperties {
-    session_expiry_interval: Option<u32>,
-    receive_maximum: Option<u16>,
-    maximum_qos: Option<QoS>,
-    retain_available: Option<bool>,
-    maximum_packet_size: Option<u32>,
-    assigned_client_id: Option<String>,
-    topic_alias_maximum: Option<u16>,
-    reason: Option<String>,
-    user_properties: Vec<(String, String)>,
-    wildcard_subscription_available: Option<bool>,
-    subscription_id_available: Option<bool>,
-    shared_subscription_available: Option<bool>,
-    server_keep_alive: Option<u16>,
-    response_info: Option<String>,
-    server_reference: Option<String>,
-    auth_method: Option<String>,
-    auth_data: Option<Bytes>,
+    /// Duration in seconds the session will be kept after disconnection
+    pub session_expiry_interval: Option<u32>,
+    /// Maximum number of QoS 1 and 2 messages the server will process concurrently
+    pub receive_maximum: Option<u16>,
+    /// Maximum QoS level the server supports
+    pub maximum_qos: Option<QoS>,
+    /// Whether the server supports retained messages
+    pub retain_available: Option<bool>,
+    /// Maximum packet size the server will accept
+    pub maximum_packet_size: Option<u32>,
+    /// Client identifier assigned by the server
+    pub assigned_client_id: Option<String>,
+    /// Maximum number of topic aliases the server will accept
+    pub topic_alias_maximum: Option<u16>,
+    /// Human-readable reason string for the connection result
+    pub reason: Option<String>,
+    /// User-defined properties for extensibility
+    pub user_properties: Vec<(String, String)>,
+    /// Whether wildcard subscriptions are supported
+    pub wildcard_subscription_available: Option<bool>,
+    /// Whether subscription identifiers are supported
+    pub subscription_id_available: Option<bool>,
+    /// Whether shared subscriptions are supported
+    pub shared_subscription_available: Option<bool>,
+    /// Keep alive time suggested by the server
+    pub server_keep_alive: Option<u16>,
+    /// Response information for authentication
+    pub response_info: Option<String>,
+    /// Server reference for redirection
+    pub server_reference: Option<String>,
+    /// Authentication method
+    pub auth_method: Option<String>,
+    /// Authentication data
+    pub auth_data: Option<Bytes>,
 }
 
 impl PropertyFrame for ConnAckProperties {
+    /// Returns the encoded length of the `ConnAckProperties`.
     fn encoded_len(&self) -> usize {
         let mut len = 0;
 
@@ -57,6 +86,7 @@ impl PropertyFrame for ConnAckProperties {
         len
     }
 
+    /// Encodes the `ConnAckProperties` into a byte buffer.
     fn encode(&self, buf: &mut BytesMut) {
         property_encode!(
             &self.session_expiry_interval,
@@ -97,112 +127,77 @@ impl PropertyFrame for ConnAckProperties {
         property_encode!(&self.auth_data, Property::AuthenticationData, buf);
     }
 
-    fn decode(buf: &mut Bytes) -> Result<Option<Self>, Error>
-    where
-        Self: Sized,
-    {
+    /// Decodes the `ConnAckProperties` from a byte buffer.
+    fn decode(buf: &mut Bytes) -> Result<Option<Self>, Error> {
         if buf.is_empty() {
             return Ok(None);
         }
 
-        let mut session_expiry_interval: Option<u32> = None;
-        let mut receive_maximum: Option<u16> = None;
-        let mut maximum_qos: Option<QoS> = None;
-        let mut retain_available: Option<bool> = None;
-        let mut maximum_packet_size: Option<u32> = None;
-        let mut assigned_client_id: Option<String> = None;
-        let mut topic_alias_maximum: Option<u16> = None;
-        let mut reason: Option<String> = None;
-        let mut user_properties: Vec<(String, String)> = Vec::new();
-        let mut wildcard_subscription_available: Option<bool> = None;
-        let mut subscription_id_available: Option<bool> = None;
-        let mut shared_subscription_available: Option<bool> = None;
-        let mut server_keep_alive: Option<u16> = None;
-        let mut response_info: Option<String> = None;
-        let mut server_reference: Option<String> = None;
-        let mut auth_method: Option<String> = None;
-        let mut auth_data: Option<Bytes> = None;
+        let mut properties = ConnAckProperties::default();
 
         while buf.has_remaining() {
             let property: Property = decode_byte(buf)?.try_into()?;
             match property {
                 Property::SessionExpiryInterval => {
-                    property_decode!(&mut session_expiry_interval, buf);
+                    property_decode!(&mut properties.session_expiry_interval, buf);
                 }
                 Property::ReceiveMaximum => {
-                    property_decode_non_zero!(&mut receive_maximum, buf);
+                    property_decode_non_zero!(&mut properties.receive_maximum, buf);
                 }
                 Property::MaximumQoS => {
-                    property_decode!(&mut maximum_qos, buf);
+                    property_decode!(&mut properties.maximum_qos, buf);
                 }
                 Property::RetainAvailable => {
-                    property_decode!(&mut retain_available, buf);
+                    property_decode!(&mut properties.retain_available, buf);
                 }
                 Property::MaximumPacketSize => {
-                    property_decode_non_zero!(&mut maximum_packet_size, buf);
+                    property_decode_non_zero!(&mut properties.maximum_packet_size, buf);
                 }
                 Property::AssignedClientIdentifier => {
-                    property_decode!(&mut assigned_client_id, buf);
+                    property_decode!(&mut properties.assigned_client_id, buf);
                 }
                 Property::TopicAliasMaximum => {
-                    property_decode!(&mut topic_alias_maximum, buf);
+                    property_decode!(&mut properties.topic_alias_maximum, buf);
                 }
                 Property::ReasonString => {
-                    property_decode!(&mut reason, buf);
+                    property_decode!(&mut properties.reason, buf);
                 }
                 Property::UserProperty => {
-                    property_decode!(&mut user_properties, buf);
+                    property_decode!(&mut properties.user_properties, buf);
                 }
                 Property::WildcardSubscriptionAvailable => {
-                    property_decode!(&mut wildcard_subscription_available, buf);
+                    property_decode!(&mut properties.wildcard_subscription_available, buf);
                 }
                 Property::SubscriptionIdentifierAvailable => {
-                    property_decode!(&mut subscription_id_available, buf);
+                    property_decode!(&mut properties.subscription_id_available, buf);
                 }
                 Property::SharedSubscriptionAvailable => {
-                    property_decode!(&mut shared_subscription_available, buf);
+                    property_decode!(&mut properties.shared_subscription_available, buf);
                 }
                 Property::ServerKeepAlive => {
-                    property_decode!(&mut server_keep_alive, buf);
+                    property_decode!(&mut properties.server_keep_alive, buf);
                 }
                 Property::ResponseInformation => {
-                    property_decode!(&mut response_info, buf);
+                    property_decode!(&mut properties.response_info, buf);
                 }
                 Property::ServerReference => {
-                    property_decode!(&mut server_reference, buf);
+                    property_decode!(&mut properties.server_reference, buf);
                 }
                 Property::AuthenticationMethod => {
-                    property_decode!(&mut auth_method, buf);
+                    property_decode!(&mut properties.auth_method, buf);
                 }
                 Property::AuthenticationData => {
-                    property_decode!(&mut auth_data, buf);
+                    property_decode!(&mut properties.auth_data, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
             }
         }
 
-        Ok(Some(ConnAckProperties {
-            session_expiry_interval,
-            receive_maximum,
-            maximum_qos,
-            retain_available,
-            maximum_packet_size,
-            assigned_client_id,
-            topic_alias_maximum,
-            reason,
-            user_properties,
-            wildcard_subscription_available,
-            subscription_id_available,
-            shared_subscription_available,
-            server_keep_alive,
-            response_info,
-            server_reference,
-            auth_method,
-            auth_data,
-        }))
+        Ok(Some(properties))
     }
 }
 
+/// Validates that the reason code is appropriate for a ConnAck packet
 fn validate_connack_reason_code(code: ReasonCode) -> bool {
     matches!(code.into(), 0 | 128..=138 | 140 | 144 | 149 | 151 | 153..=157 | 159)
 }
@@ -289,12 +284,37 @@ impl ConnAckHeader {
     }
 }
 
+/// Represents an MQTT `CONNACK` packet.
+///
+/// The `ConnAck` packet is sent by the server in response to a `Connect` packet
+/// from a client. It indicates whether the connection was accepted and provides
+/// session status and optional properties.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConnAck {
     header: ConnAckHeader,
 }
 
 impl ConnAck {
+    /// Creates a new `ConnAck` packet.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{ConnAck, ConnAckProperties, ReasonCode};
+    ///
+    /// let properties = ConnAckProperties {
+    ///     session_expiry_interval: Some(3600),
+    ///     receive_maximum: Some(10),
+    ///     ..Default::default()
+    /// };
+    /// let connack = ConnAck::new(
+    ///     ReasonCode::Success,
+    ///     true,
+    ///     Some(properties)
+    /// );
+    /// assert_eq!(connack.code(), ReasonCode::Success);
+    /// assert!(connack.session_present());
+    /// ```
     pub fn new(
         code: ReasonCode,
         session_present: bool,
@@ -305,32 +325,70 @@ impl ConnAck {
         }
     }
 
+    /// Returns the reason code indicating the connection result.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{ConnAck, ReasonCode};
+    ///
+    /// let connack = ConnAck::new(ReasonCode::Success, false, None);
+    /// assert_eq!(connack.code(), ReasonCode::Success);
+    /// ```
     pub fn code(&self) -> ReasonCode {
         self.header.code
     }
 
+    /// Returns whether the server has a previous session for this client.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::ConnAck;
+    /// use mqute_codec::protocol::v5::ReasonCode;
+    ///
+    /// let connack = ConnAck::new(ReasonCode::Success, true, None);
+    /// assert!(connack.session_present());
+    /// ```
     pub fn session_present(&self) -> bool {
         self.header.session_present
     }
 
+    /// Returns the optional properties of the `ConnAck` packet.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{ConnAck, ConnAckProperties, ReasonCode};
+    ///
+    /// let properties = ConnAckProperties {
+    ///     session_expiry_interval: Some(3600),
+    ///     ..Default::default()
+    /// };
+    /// let connack = ConnAck::new(ReasonCode::Success, false, Some(properties.clone()));
+    /// assert_eq!(connack.properties(), Some(properties));
+    /// ```
     pub fn properties(&self) -> Option<ConnAckProperties> {
         self.header.properties.clone()
     }
 }
 
 impl Encode for ConnAck {
+    /// Encodes the `ConnAck` packet into a byte buffer.
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         let header = FixedHeader::new(PacketType::ConnAck, self.payload_len());
         header.encode(buf)?;
         self.header.encode(buf)
     }
 
+    /// Returns the length of the `ConnAck` packet payload.
     fn payload_len(&self) -> usize {
         self.header.encoded_len()
     }
 }
 
 impl Decode for ConnAck {
+    /// Decodes a `ConnAck` packet from a raw MQTT packet.
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         if packet.header.packet_type() != PacketType::ConnAck || !packet.header.flags().is_default()
         {

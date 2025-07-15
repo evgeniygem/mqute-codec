@@ -1,3 +1,9 @@
+//! # Subscribe Packet - MQTT v5
+//!
+//! This module implements the MQTT v5 `Subscribe` packet, which is sent by clients to
+//! request subscription to one or more topics. The packet includes detailed subscription
+//! options and properties for each topic filter.
+
 use crate::codec::util::{
     decode_byte, decode_string, decode_variable_integer, encode_string, encode_variable_integer,
 };
@@ -12,13 +18,31 @@ use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 
+/// Properties specific to `Subscribe` packets
+///
+/// In MQTT v5, `Subscribe` packets can include:
+/// - Subscription Identifier (for shared subscriptions)
+/// - User Properties (key-value pairs for extended metadata)
+///
+/// # Example
+/// ```rust
+/// use mqute_codec::protocol::v5::SubscribeProperties;
+///
+/// let properties = SubscribeProperties {
+///     subscription_id: Some(42),  // Shared subscription ID
+///     user_properties: vec![("client".into(), "rust".into())],
+/// };
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SubscribeProperties {
+    /// Identifier for shared subscriptions
     pub subscription_id: Option<u32>,
+    /// User-defined key-value properties
     pub user_properties: Vec<(String, String)>,
 }
 
 impl PropertyFrame for SubscribeProperties {
+    /// Calculates the encoded length of the properties
     fn encoded_len(&self) -> usize {
         let mut len = 0usize;
 
@@ -30,6 +54,7 @@ impl PropertyFrame for SubscribeProperties {
         len
     }
 
+    /// Encodes the properties into a byte buffer
     fn encode(&self, buf: &mut BytesMut) {
         if let Some(value) = self.subscription_id {
             buf.put_u8(Property::SubscriptionIdentifier.into());
@@ -39,7 +64,8 @@ impl PropertyFrame for SubscribeProperties {
         property_encode!(&self.user_properties, Property::UserProperty, buf);
     }
 
-    fn decode(buf: &mut bytes::Bytes) -> Result<Option<Self>, Error>
+    /// Decodes properties from a byte buffer
+    fn decode(buf: &mut Bytes) -> Result<Option<Self>, Error>
     where
         Self: Sized,
     {
@@ -73,10 +99,14 @@ impl PropertyFrame for SubscribeProperties {
     }
 }
 
+/// Controls how retained messages are handled for subscriptions
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd)]
 pub enum RetainHandling {
+    /// Send retained messages at the time of subscribe (default)
     Send = 0,
+    /// Send retained messages only if subscription is new
     SendForNewSub = 1,
+    /// Never send retained messages
     DoNotSend = 2,
 }
 
@@ -99,16 +129,23 @@ impl Into<u8> for RetainHandling {
     }
 }
 
+/// Represents a single topic filter with subscription options
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicOptionFilter {
+    /// The topic filter to subscribe to
     pub topic: String,
+    /// Requested QoS level
     pub qos: QoS,
+    /// If true, messages published by this client won't be received
     pub no_local: bool,
+    /// If true, retain flag on published messages is kept as-is
     pub retain_as_published: bool,
+    /// Controls how retained messages are handled
     pub retain_handling: RetainHandling,
 }
 
 impl TopicOptionFilter {
+    /// Creates a new topic filter with options
     pub fn new<S: Into<String>>(
         topic: S,
         qos: QoS,
@@ -126,10 +163,15 @@ impl TopicOptionFilter {
     }
 }
 
+/// Collection of topic filters for a subscription
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicOptionFilters(Vec<TopicOptionFilter>);
 
 impl TopicOptionFilters {
+    /// Creates a new collection of topic filters
+    ///
+    /// # Panics
+    /// If no filters are provided
     pub fn new<T: IntoIterator<Item = TopicOptionFilter>>(filters: T) -> Self {
         let values: Vec<TopicOptionFilter> = filters.into_iter().collect();
 
@@ -140,10 +182,12 @@ impl TopicOptionFilters {
         TopicOptionFilters(values)
     }
 
+    /// Returns the number of topic filters
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
+    /// Decodes topic filters from payload
     pub(crate) fn decode(payload: &mut Bytes) -> Result<Self, Error> {
         let mut filters = Vec::with_capacity(1);
 
@@ -177,6 +221,7 @@ impl TopicOptionFilters {
         Ok(TopicOptionFilters(filters))
     }
 
+    /// Encodes topic filters into buffer
     pub(crate) fn encode(&self, buf: &mut BytesMut) {
         self.0.iter().for_each(|f| {
             let qos: u8 = f.qos.into();
@@ -197,16 +242,17 @@ impl TopicOptionFilters {
     }
 }
 
+// Various trait implementations for TopicOptionFilters
 impl AsRef<Vec<TopicOptionFilter>> for TopicOptionFilters {
     #[inline]
     fn as_ref(&self) -> &Vec<TopicOptionFilter> {
-        self.0.as_ref()
+        &self.0
     }
 }
 
 impl Borrow<Vec<TopicOptionFilter>> for TopicOptionFilters {
     fn borrow(&self) -> &Vec<TopicOptionFilter> {
-        self.0.as_ref()
+        &self.0
     }
 }
 
@@ -239,8 +285,15 @@ impl From<Vec<TopicOptionFilter>> for TopicOptionFilters {
     }
 }
 
+// Internal header structure for `Subscribe` packets
 id_header!(SubscribeHeader, SubscribeProperties);
 
+/// Represents an MQTT v5 `Subscribe` packet
+///
+/// Used to request subscription to one or more topics with various options:
+/// - QoS levels
+/// - Retain handling preferences
+/// - Local message filtering
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subscribe {
     header: SubscribeHeader,
@@ -248,6 +301,34 @@ pub struct Subscribe {
 }
 
 impl Subscribe {
+    /// Creates a new `Subscribe` packet
+    ///
+    /// # Example
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let subscribe = Subscribe::new(
+    ///     1234,
+    ///     None,
+    ///     vec![
+    ///         TopicOptionFilter::new(
+    ///             "sensors/temperature",
+    ///             QoS::AtLeastOnce,
+    ///             false,
+    ///             true,
+    ///             RetainHandling::Send
+    ///         ),
+    ///         TopicOptionFilter::new(
+    ///             "control/#",
+    ///             QoS::ExactlyOnce,
+    ///             true,
+    ///             false,
+    ///             RetainHandling::SendForNewSub
+    ///         )
+    ///     ]
+    /// );
+    /// ```
     pub fn new<T: IntoIterator<Item = TopicOptionFilter>>(
         packet_id: u16,
         properties: Option<SubscribeProperties>,
@@ -259,20 +340,24 @@ impl Subscribe {
         Subscribe { header, filters }
     }
 
+    /// Returns the packet identifier
     pub fn packet_id(&self) -> u16 {
         self.header.packet_id
     }
 
+    /// Returns the subscription properties
     pub fn properties(&self) -> Option<SubscribeProperties> {
         self.header.properties.clone()
     }
 
+    /// Returns the collection of topic filters
     pub fn filters(&self) -> TopicOptionFilters {
         self.filters.clone()
     }
 }
 
 impl Encode for Subscribe {
+    /// Encodes the `Subscribe` packet into a byte buffer
     fn encode(&self, buf: &mut BytesMut) -> Result<(), Error> {
         let header = FixedHeader::with_flags(
             PacketType::Subscribe,
@@ -287,12 +372,14 @@ impl Encode for Subscribe {
         Ok(())
     }
 
+    /// Calculates the total packet length
     fn payload_len(&self) -> usize {
         self.header.encoded_len() + self.filters.encoded_len()
     }
 }
 
 impl Decode for Subscribe {
+    /// Decodes a `Subscribe` packet from raw bytes
     fn decode(mut packet: RawPacket) -> Result<Self, Error> {
         // Validate header flags
         if packet.header.packet_type() != PacketType::Subscribe

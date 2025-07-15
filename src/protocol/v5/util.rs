@@ -2,7 +2,9 @@ macro_rules! ack_properties {
     ($name:ident) => {
         #[derive(Debug, Default, Clone, PartialEq, Eq)]
         pub struct $name {
+            /// Human-readable reason string
             pub reason_string: Option<String>,
+            /// User-defined key-value properties
             pub user_properties: Vec<(String, String)>,
         }
     };
@@ -77,6 +79,7 @@ macro_rules! ack_properties_frame_impl {
 
 macro_rules! ack {
     ($name:ident, $properties:ident, $check:ident) => {
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub(crate) struct Header {
             packet_id: u16,
             code: $crate::protocol::v5::reason::ReasonCode,
@@ -199,6 +202,7 @@ macro_rules! ack {
             }
         }
 
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $name {
             header: Header,
         }

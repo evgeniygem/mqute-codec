@@ -28,6 +28,7 @@ pub use pubcomp::*;
 pub use publish::*;
 pub use pubrec::*;
 pub use pubrel::*;
+pub use reason::*;
 pub use suback::*;
 pub use subscribe::*;
 pub use unsuback::*;
