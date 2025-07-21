@@ -328,6 +328,6 @@ fn fetch_packet_type(control_byte: u8) -> u8 {
 /// Builds the control byte from the packet type and flags.
 const fn build_control_byte(packet_type: PacketType, flags: Flags) -> u8 {
     let byte = (packet_type as u8) << 4;
-    let flags = (flags.dup as u8) << 3 | (flags.qos as u8) << 1 | (flags.retain as u8) << 0;
+    let flags = (flags.dup as u8) << 3 | (flags.qos as u8) << 1 | (flags.retain as u8);
     byte | flags
 }

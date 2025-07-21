@@ -1,11 +1,20 @@
 macro_rules! id_packet {
     ($packet:ident) => {
+        #[doc = concat!("Represents the packet ID `", stringify!($packet), "` packet")]
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub struct $packet {
             packet_id: u16,
         }
 
         impl $packet {
+            /// Creates a new packet.
+            ///
+            /// # Example
+            ///
+            /// ```rust
+            /// use mqute_codec::protocol::v4::PubAck;
+            /// let packet = PubAck::new(1024);
+            /// ```
             pub fn new(packet_id: u16) -> Self {
                 if packet_id == 0 {
                     panic!("Packet id is zero");
@@ -14,6 +23,16 @@ macro_rules! id_packet {
                 $packet { packet_id }
             }
 
+            /// Returns the packet ID of the packet.
+            ///
+            /// # Example
+            ///
+            /// ```rust
+            /// use mqute_codec::protocol::v4::PubAck;
+            ///
+            /// let packet = PubAck::new(1024);
+            /// assert_eq!(packet.packet_id(), 1024);
+            /// ```
             pub fn packet_id(&self) -> u16 {
                 self.packet_id
             }

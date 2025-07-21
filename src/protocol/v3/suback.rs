@@ -3,10 +3,39 @@
 //! This module initializes the `SubAck` packet for MQTT protocol.
 //! It uses the `suback!` macro to define the `SubAck` packet structure with support
 //! for Quality of Service (QoS) levels.
+
 use crate::protocol::common::suback;
 use crate::protocol::QoS;
+use crate::Error;
 
-suback!(SubAck, QoS);
+/// Represents the return codes for a `SubAck` packet.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ReturnCode(QoS);
+
+impl TryFrom<u8> for ReturnCode {
+    type Error = Error;
+
+    /// Converts a `u8` value into a `ReturnCode`.
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        let code = match value {
+            0x0 => ReturnCode(QoS::AtMostOnce),
+            0x1 => ReturnCode(QoS::AtLeastOnce),
+            0x2 => ReturnCode(QoS::ExactlyOnce),
+            _ => return Err(Error::InvalidReasonCode(value)),
+        };
+
+        Ok(code)
+    }
+}
+
+impl From<ReturnCode> for u8 {
+    /// Converts a `ReturnCode` into a `u8` value.
+    fn from(value: ReturnCode) -> Self {
+        value.0 as Self
+    }
+}
+
+suback!(ReturnCode);
 
 #[cfg(test)]
 mod tests {
@@ -41,7 +70,11 @@ mod tests {
             packet,
             SubAck::new(
                 0x1234,
-                vec![QoS::AtMostOnce, QoS::AtLeastOnce, QoS::ExactlyOnce]
+                vec![
+                    ReturnCode(QoS::AtMostOnce),
+                    ReturnCode(QoS::AtLeastOnce),
+                    ReturnCode(QoS::ExactlyOnce)
+                ]
             )
         );
     }
@@ -50,7 +83,11 @@ mod tests {
     fn suback_encode() {
         let packet = SubAck::new(
             0x1234,
-            vec![QoS::AtMostOnce, QoS::AtLeastOnce, QoS::ExactlyOnce],
+            vec![
+                ReturnCode(QoS::AtMostOnce),
+                ReturnCode(QoS::AtLeastOnce),
+                ReturnCode(QoS::ExactlyOnce),
+            ],
         );
 
         let mut stream = BytesMut::new();

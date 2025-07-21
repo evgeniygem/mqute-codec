@@ -91,7 +91,7 @@ impl PropertyFrame for PublishProperties {
         property_encode!(&self.topic_alias, Property::TopicAlias, buf);
         property_encode!(&self.response_topic, Property::ResponseTopic, buf);
         property_encode!(&self.correlation_data, Property::CorrelationData, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
         property_encode!(&self.subscription_id, Property::SubscriptionIdentifier, buf);
         property_encode!(&self.content_type, Property::ContentType, buf);
     }
@@ -131,7 +131,7 @@ impl PropertyFrame for PublishProperties {
                 Property::CorrelationData => {
                     property_decode!(&mut correlation_data, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut user_properties, buf);
                 }
                 Property::SubscriptionIdentifier => {
@@ -284,11 +284,54 @@ impl Publish {
     }
 
     /// Returns the packet flags
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use bytes::Bytes;
+    /// use mqute_codec::protocol::{Flags, QoS};
+    /// use mqute_codec::protocol::v5::{Publish, PublishProperties};
+    ///
+    /// let publish = Publish::new(
+    ///     "test/topic",
+    ///     1234,
+    ///     None,
+    ///     Bytes::from("message payload"),
+    ///     Flags::new(QoS::AtLeastOnce)
+    /// );
+    ///
+    /// assert_eq!(publish.flags(), Flags::new(QoS::AtLeastOnce));
+    /// ```
     pub fn flags(&self) -> Flags {
         self.flags
     }
 
     /// Returns the packet identifier (if QoS > 0)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use bytes::Bytes;
+    /// use mqute_codec::protocol::{Flags, QoS};
+    /// use mqute_codec::protocol::v5::{Publish, PublishProperties};
+    ///
+    /// let publish = Publish::new(
+    ///     "test/topic",
+    ///     1234,
+    ///     None,
+    ///     Bytes::from("message payload"),
+    ///     Flags::new(QoS::AtLeastOnce)
+    /// );
+    ///
+    /// assert_eq!(publish.packet_id(), Some(1234u16));
+    ///
+    /// let publish = Publish::new("test/topic",
+    ///                            0,
+    ///                            None,
+    ///                            Bytes::from("message payload"),
+    ///                            Flags::new(QoS::AtMostOnce));
+    /// assert_eq!(publish.packet_id(), None);
+    /// ```
     pub fn packet_id(&self) -> Option<u16> {
         if self.flags.qos != QoS::AtMostOnce {
             Some(self.header.inner.packet_id)
@@ -298,16 +341,72 @@ impl Publish {
     }
 
     /// Returns the message topic
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use bytes::Bytes;
+    /// use mqute_codec::protocol::{Flags, QoS};
+    /// use mqute_codec::protocol::v5::{Publish, PublishProperties};
+    ///
+    /// let publish = Publish::new(
+    ///     "test/topic",
+    ///     1234,
+    ///     None,
+    ///     Bytes::from("message payload"),
+    ///     Flags::new(QoS::AtLeastOnce)
+    /// );
+    /// assert_eq!(publish.topic(), "test/topic");
+    /// ```
     pub fn topic(&self) -> String {
         self.header.inner.topic.clone()
     }
 
     /// Returns a copy of the properties (if any)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use bytes::Bytes;
+    /// use mqute_codec::protocol::{Flags, QoS};
+    /// use mqute_codec::protocol::v5::{Publish, PublishProperties};
+    ///
+    /// // Create a QoS 1 message with properties
+    /// let properties = PublishProperties {
+    ///     content_type: Some("text/plain".into()),
+    ///     ..Default::default()
+    /// };
+    /// let publish = Publish::new(
+    ///     "test/topic",
+    ///     1234,
+    ///     Some(properties.clone()),
+    ///     Bytes::from("message payload"),
+    ///     Flags::new(QoS::AtLeastOnce)
+    /// );
+    /// assert_eq!(publish.properties(), Some(properties));
+    /// ```
     pub fn properties(&self) -> Option<PublishProperties> {
         self.header.properties.clone()
     }
 
     /// Returns the message payload
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use bytes::Bytes;
+    /// use mqute_codec::protocol::{Flags, QoS};
+    /// use mqute_codec::protocol::v5::{Publish, PublishProperties};
+    ///
+    /// let publish = Publish::new(
+    ///     "test/topic",
+    ///     1234,
+    ///     None,
+    ///     Bytes::from("message payload"),
+    ///     Flags::new(QoS::AtLeastOnce)
+    /// );
+    /// assert_eq!(publish.payload(), Bytes::from("message payload"));
+    /// ```
     pub fn payload(&self) -> Bytes {
         self.payload.clone()
     }

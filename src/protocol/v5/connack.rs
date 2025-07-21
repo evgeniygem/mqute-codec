@@ -104,7 +104,7 @@ impl PropertyFrame for ConnAckProperties {
         );
         property_encode!(&self.topic_alias_maximum, Property::TopicAliasMaximum, buf);
         property_encode!(&self.reason, Property::ReasonString, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
         property_encode!(
             &self.wildcard_subscription_available,
             Property::WildcardSubscriptionAvailable,
@@ -162,7 +162,7 @@ impl PropertyFrame for ConnAckProperties {
                 Property::ReasonString => {
                     property_decode!(&mut properties.reason, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut properties.user_properties, buf);
                 }
                 Property::WildcardSubscriptionAvailable => {

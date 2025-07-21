@@ -62,7 +62,7 @@ impl PropertyFrame for DisconnectProperties {
         );
 
         property_encode!(&self.reason_string, Property::ReasonString, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
         property_encode!(&self.server_reference, Property::ServerReference, buf);
     }
 
@@ -88,7 +88,7 @@ impl PropertyFrame for DisconnectProperties {
                 Property::ReasonString => {
                     property_decode!(&mut reason_string, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut user_properties, buf);
                 }
                 Property::ServerReference => {

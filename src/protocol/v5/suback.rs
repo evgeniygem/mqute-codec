@@ -1,7 +1,7 @@
-//! # Subscribe Acknowledgment (SUBACK) Packet - MQTT v5
+//! # Subscribe Acknowledgment (SubAck) Packet - MQTT v5
 //!
 //! This module implements the MQTT v5 `SubAck` packet, which is sent by the server
-//! to acknowledge receipt and processing of a SUBSCRIBE packet. The `SubAck` packet
+//! to acknowledge receipt and processing of a `Subscribe` packet. The `SubAck` packet
 //! contains return codes indicating the QoS level granted for each subscription.
 
 use crate::codec::{Decode, Encode, RawPacket};
@@ -45,8 +45,8 @@ id_header!(SubAckHeader, SubAckProperties);
 /// Represents an MQTT v5 `SubAck` packet
 ///
 /// The `SubAck` packet is sent by the server to acknowledge receipt and processing
-/// of a SUBSCRIBE packet. It contains:
-/// - Packet Identifier matching the SUBSCRIBE packet
+/// of a `Subscribe` packet. It contains:
+/// - Packet Identifier matching the `Subscribe` packet
 /// - List of return codes indicating granted QoS levels or errors
 /// - Optional properties (v5 only)
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -63,6 +63,7 @@ impl SubAck {
     /// - If any reason code is invalid for `SubAck`
     ///
     /// # Example
+    ///
     /// ```rust
     /// use mqute_codec::protocol::v5::{SubAck, ReasonCode};
     ///
@@ -74,17 +75,6 @@ impl SubAck {
     ///         ReasonCode::GrantedQos0,
     ///         ReasonCode::GrantedQos2,
     ///         ReasonCode::GrantedQos1
-    ///     ],
-    /// );
-    ///
-    /// // Subscription with errors
-    /// let suback_err = SubAck::new(
-    ///     5678,
-    ///     None,
-    ///     vec![
-    ///         ReasonCode::GrantedQos1,
-    ///         ReasonCode::NotAuthorized,
-    ///         ReasonCode::TopicFilterInvalid
     ///     ],
     /// );
     /// ```
@@ -111,16 +101,83 @@ impl SubAck {
     }
 
     /// Returns the packet identifier
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{SubAck, ReasonCode};
+    ///
+    /// // Successful subscription with different QoS levels
+    /// let suback = SubAck::new(
+    ///     1234,
+    ///     None,
+    ///     vec![
+    ///         ReasonCode::GrantedQos0,
+    ///         ReasonCode::GrantedQos2,
+    ///         ReasonCode::GrantedQos1
+    ///     ],
+    /// );
+    ///
+    /// assert_eq!(suback.packet_id(), 1234u16);
+    /// ```
     pub fn packet_id(&self) -> u16 {
         self.header.packet_id
     }
 
     /// Returns the list of reason codes
-    pub fn code(&self) -> Codes<ReasonCode> {
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Codes;
+    /// use mqute_codec::protocol::v5::{SubAck, ReasonCode};
+    ///
+    /// // Successful subscription with different QoS levels
+    /// let suback = SubAck::new(
+    ///     1234,
+    ///     None,
+    ///     vec![
+    ///         ReasonCode::GrantedQos0,
+    ///         ReasonCode::GrantedQos2,
+    ///         ReasonCode::GrantedQos1
+    ///     ],
+    /// );
+    ///
+    /// let codes = Codes::new(vec![
+    ///                             ReasonCode::GrantedQos0,
+    ///                             ReasonCode::GrantedQos2,
+    ///                             ReasonCode::GrantedQos1
+    ///                         ]);
+    /// assert_eq!(suback.codes(), codes);
+    /// ```
+    pub fn codes(&self) -> Codes<ReasonCode> {
         self.codes.clone()
     }
 
     /// Returns a copy of the properties (if any)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{SubAck, ReasonCode, SubAckProperties};
+    ///
+    /// let properties = SubAckProperties {
+    ///     reason_string: Some("value".into_string()),
+    ///     user_properties: vec![],
+    /// };
+    ///
+    /// // Successful subscription with different QoS levels
+    /// let suback = SubAck::new(
+    ///     1234,
+    ///     Some(properties.clone()),
+    ///     vec![
+    ///         ReasonCode::GrantedQos0,
+    ///         ReasonCode::GrantedQos2,
+    ///         ReasonCode::GrantedQos1
+    ///     ],
+    /// );
+    /// assert_eq!(suback.properties(), Some(properties));
+    /// ```
     pub fn properties(&self) -> Option<SubAckProperties> {
         self.header.properties.clone()
     }

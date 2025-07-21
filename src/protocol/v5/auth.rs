@@ -57,7 +57,7 @@ impl PropertyFrame for AuthProperties {
         property_encode!(&self.auth_method, Property::AuthenticationMethod, buf);
         property_encode!(&self.auth_data, Property::AuthenticationData, buf);
         property_encode!(&self.reason_string, Property::ReasonString, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
     }
 
     /// Decodes the `AuthProperties` from a byte buffer.
@@ -80,7 +80,7 @@ impl PropertyFrame for AuthProperties {
                 Property::ReasonString => {
                     property_decode!(&mut properties.reason_string, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut properties.user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),

@@ -11,10 +11,10 @@ use crate::codec::util::{
     decode_byte, decode_bytes, decode_string, decode_variable_integer, encode_bytes, encode_string,
     encode_variable_integer,
 };
-use crate::protocol::common::{connect, Auth, ConnectHeader};
+use crate::protocol::common::{connect, ConnectHeader};
 use crate::protocol::common::{ConnectFrame, WillFrame};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{Protocol, QoS};
+use crate::protocol::{Credentials, Protocol, QoS};
 use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
@@ -89,7 +89,7 @@ impl PropertyFrame for ConnectProperties {
             Property::RequestProblemInformation,
             buf
         );
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
         property_encode!(&self.auth_method, Property::AuthenticationMethod, buf);
         property_encode!(&self.auth_data, Property::AuthenticationData, buf);
     }
@@ -123,7 +123,7 @@ impl PropertyFrame for ConnectProperties {
                 Property::RequestProblemInformation => {
                     property_decode!(&mut properties.request_problem_info, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut properties.user_properties, buf);
                 }
                 Property::AuthenticationMethod => {
@@ -248,7 +248,7 @@ impl PropertyFrame for WillProperties {
         property_encode!(&self.content_type, Property::ContentType, buf);
         property_encode!(&self.response_topic, Property::ResponseTopic, buf);
         property_encode!(&self.correlation_data, Property::CorrelationData, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
     }
 
     /// Decodes Will properties from a byte buffer
@@ -285,7 +285,7 @@ impl PropertyFrame for WillProperties {
                 Property::CorrelationData => {
                     property_decode!(&mut properties.correlation_data, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut properties.user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
@@ -312,6 +312,35 @@ pub struct Will {
     pub qos: QoS,
     /// Whether the Will message should be retained
     pub retain: bool,
+}
+
+impl Will {
+    /// Creates a new `Will` packet
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::Will;
+    /// use bytes::Bytes;
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let will = Will::new(None, "tpoic", Bytes::new(), QoS::ExactlyOnce, false);
+    /// ```
+    pub fn new<T: Into<String>>(
+        properties: Option<WillProperties>,
+        topic: T,
+        payload: Bytes,
+        qos: QoS,
+        retain: bool,
+    ) -> Will {
+        Will {
+            properties,
+            topic: topic.into(),
+            payload,
+            qos,
+            retain,
+        }
+    }
 }
 
 impl WillFrame for Will {
@@ -398,7 +427,7 @@ impl Connect {
     /// # Example
     ///
     /// ```rust
-    /// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
+    /// use mqute_codec::protocol::v5::{Connect, Will, ConnectProperties};
     /// use std::time::Duration;
     ///
     /// let connect = Connect::with_properties(
@@ -412,7 +441,7 @@ impl Connect {
     /// ```
     pub fn with_properties<S: Into<String>>(
         client_id: S,
-        auth: Option<Auth>,
+        auth: Option<Credentials>,
         will: Option<Will>,
         properties: ConnectProperties,
         keep_alive: u16,

@@ -59,7 +59,7 @@ impl TryFrom<u8> for QoS {
     }
 }
 
-impl Into<u8> for QoS {
+impl From<QoS> for u8 {
     /// Converts the `QoS` enum into its corresponding numeric value.
     ///
     /// # Examples
@@ -71,7 +71,7 @@ impl Into<u8> for QoS {
     /// let value: u8 = qos.into();
     /// assert_eq!(value, 2);
     /// ```
-    fn into(self) -> u8 {
-        self as u8
+    fn from(value: QoS) -> Self {
+        value as u8
     }
 }

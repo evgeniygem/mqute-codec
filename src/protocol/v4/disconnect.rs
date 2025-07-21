@@ -7,7 +7,7 @@
 use super::util;
 use crate::protocol::PacketType;
 
-/// Represents an MQTT `DISCONNECT` packet.
+/// Represents an MQTT `Disconnect` packet.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Disconnect {}
 

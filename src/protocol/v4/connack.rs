@@ -56,10 +56,10 @@ impl TryFrom<u8> for ConnectReturnCode {
     }
 }
 
-impl Into<u8> for ConnectReturnCode {
+impl From<ConnectReturnCode> for u8 {
     /// Converts a `ConnectReturnCode` into a `u8` value.
-    fn into(self) -> u8 {
-        self as u8
+    fn from(value: ConnectReturnCode) -> Self {
+        value as u8
     }
 }
 

@@ -72,7 +72,7 @@ impl WillFrame for Will {
     /// Updates the connection flags to reflect the `Will` settings.
     fn update_flags(&self, flags: &mut u8) {
         // Update the 'Will' flag
-        flags.set_bit(WILL_FLAG as usize, true);
+        flags.set_bit(WILL_FLAG, true);
 
         // Update 'Qos' flags
         flags.set_bits(WILL_QOS, self.qos as u8);
@@ -187,7 +187,7 @@ mod tests {
     }
 
     fn connect_packet() -> Connect {
-        let auth = Some(Auth::login("user", "pass"));
+        let auth = Some(Credentials::login("user", "pass"));
         let will = Some(Will::new(
             "/abc",
             Bytes::from("bye"),

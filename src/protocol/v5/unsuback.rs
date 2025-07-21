@@ -1,4 +1,4 @@
-//! # Unsubscribe Acknowledgment (UNSUBACK) Packet - MQTT v5
+//! # Unsubscribe Acknowledgment (UnsubAck) Packet - MQTT v5
 //!
 //! This module implements the MQTT v5 `UnsubAck` packet, which is sent by the server
 //! to acknowledge receipt and processing of an UNSUBSCRIBE packet. The `UnsubAck` packet
@@ -55,6 +55,7 @@ impl UnsubAck {
     /// - If any reason code is invalid for `UnsubAck`
     ///
     /// # Example
+    ///
     /// ```rust
     /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
     ///
@@ -101,16 +102,67 @@ impl UnsubAck {
     }
 
     /// Returns the packet identifier
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
+    ///
+    /// // Successful unsubscription
+    /// let unsuback = UnsubAck::new(
+    ///     1234,
+    ///     None,
+    ///     vec![ReasonCode::Success, ReasonCode::Success]
+    /// );
+    /// assert_eq!(unsuback.packet_id(), 1234u16);
+    /// ```
     pub fn packet_id(&self) -> u16 {
         self.header.packet_id
     }
 
     /// Returns the list of reason codes
-    pub fn code(&self) -> Codes<ReasonCode> {
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::Codes;
+    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
+    ///
+    /// // Successful unsubscription
+    /// let unsuback = UnsubAck::new(
+    ///     1234,
+    ///     None,
+    ///     vec![ReasonCode::Success, ReasonCode::Success]
+    /// );
+    ///
+    /// let codes = Codes::new(vec![ReasonCode::Success, ReasonCode::Success]);
+    /// assert_eq!(unsuback.codes(), codes);
+    /// ```
+    pub fn codes(&self) -> Codes<ReasonCode> {
         self.codes.clone()
     }
 
     /// Returns a copy of the properties (if any)
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode, UnsubAckProperties};
+    ///
+    /// let properties = UnsubAckProperties {
+    ///     reason_string: None,
+    ///     user_properties: vec![("key".to_string(), "value".to_string())]
+    /// };
+    ///
+    /// // Successful unsubscription
+    /// let unsuback = UnsubAck::new(
+    ///     1234,
+    ///     Some(properties.clone()),
+    ///     vec![ReasonCode::Success, ReasonCode::Success]
+    /// );
+    ///
+    /// assert_eq!(unsuback.properties(), Some(properties));
+    /// ```
     pub fn properties(&self) -> Option<UnsubAckProperties> {
         self.header.properties.clone()
     }

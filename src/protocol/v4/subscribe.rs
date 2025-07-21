@@ -46,6 +46,7 @@ impl TopicQosFilter {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicQosFilters(Vec<TopicQosFilter>);
 
+#[allow(clippy::len_without_is_empty)]
 impl TopicQosFilters {
     /// Creates a new `TopicQosFilters` instance from an iterator of `TopicQosFilter`.
     ///
@@ -59,12 +60,10 @@ impl TopicQosFilters {
     /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilters, TopicQosFilter};
     /// use mqute_codec::protocol::QoS;
     ///
-    /// let filters = vec![
-    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
-    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
-    /// ];
-    /// let topic_filters = TopicQosFilters::new(filters);
-    /// assert_eq!(topic_filters.len(), 2);
+    /// let topic_filters = TopicQosFilters::new(vec![
+    ///         TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+    ///         TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+    ///     ]);
     /// ```
     pub fn new<T: IntoIterator<Item = TopicQosFilter>>(filters: T) -> Self {
         let values: Vec<TopicQosFilter> = filters.into_iter().collect();
@@ -76,12 +75,20 @@ impl TopicQosFilters {
         TopicQosFilters(values)
     }
 
-    /// Returns `true` if the collection of topic filters is empty.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
     /// Returns the number of topic filters in the collection.
+    ///
+    /// # Example
+    /// ```rust
+    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilters, TopicQosFilter};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let filters = vec![
+    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+    /// ];
+    /// let topic_filters = TopicQosFilters::new(filters);
+    /// assert_eq!(topic_filters.len(), 2);
+    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -148,10 +155,10 @@ impl FromIterator<TopicQosFilter> for TopicQosFilters {
     }
 }
 
-impl Into<Vec<TopicQosFilter>> for TopicQosFilters {
+impl From<TopicQosFilters> for Vec<TopicQosFilter> {
     #[inline]
-    fn into(self) -> Vec<TopicQosFilter> {
-        self.0
+    fn from(value: TopicQosFilters) -> Self {
+        value.0
     }
 }
 
@@ -162,10 +169,10 @@ impl From<Vec<TopicQosFilter>> for TopicQosFilters {
     }
 }
 
-/// Represents an MQTT `SUBSCRIBE` packet.
+/// Represents an MQTT `Subscribe` packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subscribe {
-    /// The packet ID for the `SUBSCRIBE` packet.
+    /// The packet ID for the `Subscribe` packet.
     packet_id: u16,
 
     /// The list of topic filters and their requested QoS levels.
@@ -201,7 +208,7 @@ impl Subscribe {
         Subscribe { packet_id, filters }
     }
 
-    /// Returns the packet ID of the `SUBSCRIBE` packet.
+    /// Returns the packet ID of the `Subscribe` packet.
     ///
     /// # Example
     ///

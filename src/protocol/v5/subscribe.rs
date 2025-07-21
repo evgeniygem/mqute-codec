@@ -17,6 +17,7 @@ use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
 use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
+use std::ops::{Index, IndexMut};
 
 /// Properties specific to `Subscribe` packets
 ///
@@ -61,7 +62,7 @@ impl PropertyFrame for SubscribeProperties {
             encode_variable_integer(buf, value).expect("");
         }
 
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
     }
 
     /// Decodes properties from a byte buffer
@@ -85,7 +86,7 @@ impl PropertyFrame for SubscribeProperties {
                     }
                     subscription_id = Some(decode_variable_integer(buf)? as u32);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
@@ -123,9 +124,9 @@ impl TryFrom<u8> for RetainHandling {
     }
 }
 
-impl Into<u8> for RetainHandling {
-    fn into(self) -> u8 {
-        self as u8
+impl From<RetainHandling> for u8 {
+    fn from(value: RetainHandling) -> Self {
+        value as u8
     }
 }
 
@@ -167,6 +168,7 @@ impl TopicOptionFilter {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicOptionFilters(Vec<TopicOptionFilter>);
 
+#[allow(clippy::len_without_is_empty)]
 impl TopicOptionFilters {
     /// Creates a new collection of topic filters
     ///
@@ -182,7 +184,20 @@ impl TopicOptionFilters {
         TopicOptionFilters(values)
     }
 
-    /// Returns the number of topic filters
+    /// Returns the number of topic filters in the collection.
+    ///
+    /// # Example
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilters, TopicOptionFilter, RetainHandling};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let filters = vec![
+    ///     TopicOptionFilter::new("topic1", QoS::AtLeastOnce, false, true, RetainHandling::DoNotSend),
+    ///     TopicOptionFilter::new("topic2", QoS::ExactlyOnce, true, true, RetainHandling::SendForNewSub),
+    /// ];
+    /// let topic_filters = TopicOptionFilters::new(filters);
+    /// assert_eq!(topic_filters.len(), 2);
+    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -271,10 +286,10 @@ impl FromIterator<TopicOptionFilter> for TopicOptionFilters {
     }
 }
 
-impl Into<Vec<TopicOptionFilter>> for TopicOptionFilters {
+impl From<TopicOptionFilters> for Vec<TopicOptionFilter> {
     #[inline]
-    fn into(self) -> Vec<TopicOptionFilter> {
-        self.0
+    fn from(value: TopicOptionFilters) -> Self {
+        value.0
     }
 }
 
@@ -282,6 +297,20 @@ impl From<Vec<TopicOptionFilter>> for TopicOptionFilters {
     #[inline]
     fn from(value: Vec<TopicOptionFilter>) -> Self {
         TopicOptionFilters(value)
+    }
+}
+
+impl Index<usize> for TopicOptionFilters {
+    type Output = TopicOptionFilter;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.0.index(index)
+    }
+}
+
+impl IndexMut<usize> for TopicOptionFilters {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.0.index_mut(index)
     }
 }
 
@@ -341,16 +370,85 @@ impl Subscribe {
     }
 
     /// Returns the packet identifier
+    ///
+    /// # Example
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let subscribe = Subscribe::new(1234, None, vec![TopicOptionFilter::new(
+    ///             "control/#",
+    ///             QoS::ExactlyOnce,
+    ///             true,
+    ///             false,
+    ///             RetainHandling::SendForNewSub
+    ///         )]);
+    /// assert_eq!(subscribe.packet_id(), 1234);
+    /// ```
     pub fn packet_id(&self) -> u16 {
         self.header.packet_id
     }
 
     /// Returns the subscription properties
+    ///
+    /// # Example
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{RetainHandling, Subscribe, SubscribeProperties, TopicOptionFilter};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let properties = SubscribeProperties {
+    ///     subscription_id: Some(42),  // Shared subscription ID
+    ///     user_properties: vec![("client".into(), "rust".into())],
+    /// };
+    ///
+    ///
+    /// let filter = TopicOptionFilter::new(
+    ///             "sensors/temperature",
+    ///             QoS::AtLeastOnce,
+    ///             false,
+    ///             true,
+    ///             RetainHandling::Send
+    ///         );
+    ///
+    /// let subscribe = Subscribe::new(1234, Some(properties.clone()), vec![filter]);
+    ///
+    /// assert_eq!(subscribe.properties(), Some(properties));
+    /// ```
     pub fn properties(&self) -> Option<SubscribeProperties> {
         self.header.properties.clone()
     }
 
     /// Returns the collection of topic filters
+    ///
+    /// # Example
+    /// ```rust
+    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
+    /// use mqute_codec::protocol::QoS;
+    ///
+    /// let subscribe = Subscribe::new(
+    ///     1234,
+    ///     None,
+    ///     vec![
+    ///         TopicOptionFilter::new(
+    ///             "sensors/temperature",
+    ///             QoS::AtLeastOnce,
+    ///             false,
+    ///             true,
+    ///             RetainHandling::Send
+    ///         )
+    ///     ]
+    /// );
+    ///
+    /// let filters = subscribe.filters();
+    /// assert_eq!(filters[0],
+    ///            TopicOptionFilter::new(
+    ///                             "sensors/temperature",
+    ///                             QoS::AtLeastOnce,
+    ///                             false,
+    ///                             true,
+    ///                             RetainHandling::Send
+    ///                         ));
+    /// ```
     pub fn filters(&self) -> TopicOptionFilters {
         self.filters.clone()
     }
