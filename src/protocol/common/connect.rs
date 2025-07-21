@@ -87,11 +87,11 @@ const USERNAME: usize = 7;
 
 /// Represents authentication information for an MQTT connection.
 ///
-/// The `Auth` struct encapsulates the username and optional password used for authenticating
+/// The `Credentials` struct encapsulates the username and optional password used for authenticating
 /// a client with an MQTT broker. It provides methods for creating, encoding, decoding, and
 /// manipulating authentication data.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Auth {
+pub struct Credentials {
     /// The username for authentication.
     username: String,
 
@@ -99,38 +99,34 @@ pub struct Auth {
     password: Option<String>,
 }
 
-impl Auth {
-    /// Creates a new `Auth` instance.
+impl Credentials {
+    /// Creates a new `Credentials` instance.
     ///
     /// # Arguments
     ///
     /// - `username`: The username for authentication. This can be any type that implements `Into<String>`.
     /// - `password`: An optional password for authentication.
     ///
-    /// # Returns
-    ///
-    /// A new `Auth` instance.
-    ///
     /// # Examples
     ///
     /// ```rust
-    /// use mqute_codec::protocol::Auth;
+    /// use mqute_codec::protocol::Credentials;
     ///
-    /// let auth = Auth::new("user", Some("pass".to_string()));
-    /// assert_eq!(auth.username(), "user");
-    /// assert_eq!(auth.password(), Some("pass".to_string()));
+    /// let credentials = Credentials::new("user", Some("pass".to_string()));
+    /// assert_eq!(credentials.username(), "user");
+    /// assert_eq!(credentials.password(), Some("pass".to_string()));
     /// ```
     pub fn new<T>(username: T, password: Option<String>) -> Self
     where
         T: Into<String>,
     {
-        Auth {
+        Credentials {
             username: username.into(),
             password,
         }
     }
 
-    /// Creates a new `Auth` instance with only a username.
+    /// Creates a new `Credentials` instance with only a username.
     ///
     /// # Arguments
     ///
@@ -138,22 +134,22 @@ impl Auth {
     ///
     /// # Returns
     ///
-    /// A new `Auth` instance with no password.
+    /// A new `Credentials` instance with no password.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use mqute_codec::protocol::Auth;
+    /// use mqute_codec::protocol::Credentials;
     ///
-    /// let auth = Auth::with_name("user");
-    /// assert_eq!(auth.username(), "user");
-    /// assert_eq!(auth.password(), None);
+    /// let credentials = Credentials::with_name("user");
+    /// assert_eq!(credentials.username(), "user");
+    /// assert_eq!(credentials.password(), None);
     /// ```
     pub fn with_name<T: Into<String>>(username: T) -> Self {
         Self::new(username, None)
     }
 
-    /// Creates a new `Auth` instance with both a username and password.
+    /// Creates a new `Credentials` instance with both a username and password.
     ///
     /// # Arguments
     ///
@@ -162,16 +158,16 @@ impl Auth {
     ///
     /// # Returns
     ///
-    /// A new `Auth` instance with both username and password.
+    /// A new `Credentials` instance with both username and password.
     ///
     /// # Examples
     ///
     /// ```rust
-    /// use mqute_codec::protocol::Auth;
+    /// use mqute_codec::protocol::Credentials;
     ///
-    /// let auth = Auth::login("user", "pass");
-    /// assert_eq!(auth.username(), "user");
-    /// assert_eq!(auth.password(), Some("pass".to_string()));
+    /// let credentials = Credentials::login("user", "pass");
+    /// assert_eq!(credentials.username(), "user");
+    /// assert_eq!(credentials.password(), Some("pass".to_string()));
     /// ```
     pub fn login<T: Into<String>, U: Into<String>>(username: T, password: U) -> Self {
         Self::new(username.into(), Some(password.into()))
@@ -186,10 +182,10 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust
-    /// use mqute_codec::protocol::Auth;
+    /// use mqute_codec::protocol::Credentials;
     ///
-    /// let auth = Auth::with_name("user");
-    /// assert_eq!(auth.username(), "user");
+    /// let credentials = Credentials::with_name("user");
+    /// assert_eq!(credentials.username(), "user");
     /// ```
     pub fn username(&self) -> String {
         self.username.clone()
@@ -204,18 +200,18 @@ impl Auth {
     /// # Examples
     ///
     /// ```rust
-    /// use mqute_codec::protocol::Auth;
+    /// use mqute_codec::protocol::Credentials;
     ///
-    /// let auth = Auth::login("user", "pass");
-    /// assert_eq!(auth.password(), Some("pass".to_string()));
+    /// let credentials = Credentials::login("user", "pass");
+    /// assert_eq!(credentials.password(), Some("pass".to_string()));
     /// ```
     pub fn password(&self) -> Option<String> {
         self.password.clone()
     }
 
-    /// Calculates the encoded length of the `Auth` structure.
+    /// Calculates the encoded length of the `Credentials` structure.
     ///
-    /// This is used to determine the size of the buffer required to encode the `Auth` data.
+    /// This is used to determine the size of the buffer required to encode the `Credentials` data.
     pub(crate) fn encoded_len(&self) -> usize {
         let mut size = 2 + self.username.len(); // 2 bytes for string length + username length
         if let Some(password) = self.password.as_ref() {
@@ -224,7 +220,7 @@ impl Auth {
         size
     }
 
-    /// Encodes the `Auth` structure into the provided buffer.
+    /// Encodes the `Credentials` structure into the provided buffer.
     pub(crate) fn encode(&self, buf: &mut BytesMut) {
         encode_string(buf, &self.username);
 
@@ -242,7 +238,7 @@ impl Auth {
         flags.set_bit(PASSWORD, self.password.is_some());
     }
 
-    /// Decodes the `Auth` structure from the provided buffer and flags.
+    /// Decodes the `Credentials` structure from the provided buffer and flags.
     pub(crate) fn decode(buf: &mut Bytes, flags: u8) -> Result<Option<Self>, Error> {
         if !flags.get_bit(USERNAME) {
             return Ok(None);
@@ -256,7 +252,7 @@ impl Auth {
             None
         };
 
-        Ok(Some(Auth::new(username, password)))
+        Ok(Some(Credentials::new(username, password)))
     }
 }
 
@@ -264,7 +260,7 @@ impl Auth {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct ConnectPayload<T> {
     pub client_id: String,
-    pub auth: Option<Auth>,
+    pub credentials: Option<Credentials>,
     pub will: Option<T>,
 }
 
@@ -273,10 +269,14 @@ where
     T: WillFrame,
 {
     /// Creates a new `ConnectPayload`.
-    pub(crate) fn new<S: Into<String>>(client_id: S, auth: Option<Auth>, will: Option<T>) -> Self {
+    pub(crate) fn new<S: Into<String>>(
+        client_id: S,
+        credentials: Option<Credentials>,
+        will: Option<T>,
+    ) -> Self {
         ConnectPayload {
             client_id: client_id.into(),
-            auth,
+            credentials,
             will,
         }
     }
@@ -286,11 +286,11 @@ where
         let client_id = decode_string(payload)?;
 
         let will = T::decode(payload, flags)?;
-        let auth = Auth::decode(payload, flags)?;
+        let credentials = Credentials::decode(payload, flags)?;
 
         Ok(ConnectPayload {
             client_id,
-            auth,
+            credentials,
             will,
         })
     }
@@ -304,8 +304,8 @@ where
             will.encode(buf)?;
         }
 
-        if let Some(auth) = self.auth.as_ref() {
-            auth.encode(buf);
+        if let Some(credentials) = self.credentials.as_ref() {
+            credentials.encode(buf);
         }
 
         Ok(())
@@ -318,9 +318,9 @@ where
                 .as_ref()
                 .map(|will| will.encoded_len())
                 .unwrap_or(0) +
-            self.auth                         // Auth
+            self.credentials                         // Credentials
                 .as_ref()
-                .map(|auth| auth.encoded_len())
+                .map(|credentials| credentials.encoded_len())
                 .unwrap_or(0)
     }
 }
@@ -342,7 +342,7 @@ macro_rules! connect {
         impl $name {
             fn from_scratch<S: Into<String>>(
                 client_id: S,
-                auth: Option<$crate::protocol::common::Auth>,
+                credentials: Option<$crate::protocol::common::Credentials>,
                 will: Option<$will>,
                 properties: Option<$property>,
                 keep_alive: u16,
@@ -355,8 +355,8 @@ macro_rules! connect {
 
                 flags.set_bit(CLEAN_SESSION, clean_session);
 
-                if let Some(auth) = auth.as_ref() {
-                    auth.update_flags(&mut flags);
+                if let Some(credentials) = credentials.as_ref() {
+                    credentials.update_flags(&mut flags);
                 }
 
                 if let Some(will) = will.as_ref() {
@@ -366,20 +366,30 @@ macro_rules! connect {
                 let header = $crate::protocol::common::ConnectHeader::<$property>::new(
                     $proto, flags, keep_alive, properties,
                 );
-                let payload =
-                    $crate::protocol::common::ConnectPayload::<$will>::new(client_id, auth, will);
+                let payload = $crate::protocol::common::ConnectPayload::<$will>::new(
+                    client_id,
+                    credentials,
+                    will,
+                );
 
                 Self { header, payload }
             }
 
             pub fn new<S: Into<String>>(
                 client_id: S,
-                auth: Option<$crate::protocol::Auth>,
+                credentials: Option<$crate::protocol::Credentials>,
                 will: Option<$will>,
                 keep_alive: u16,
                 clean_session: bool,
             ) -> Self {
-                Self::from_scratch(client_id, auth, will, None, keep_alive, clean_session)
+                Self::from_scratch(
+                    client_id,
+                    credentials,
+                    will,
+                    None,
+                    keep_alive,
+                    clean_session,
+                )
             }
 
             pub fn protocol(&self) -> $crate::protocol::Protocol {
@@ -399,8 +409,8 @@ macro_rules! connect {
                 self.payload.client_id.clone()
             }
 
-            pub fn auth(&self) -> Option<$crate::protocol::common::Auth> {
-                self.payload.auth.clone()
+            pub fn credentials(&self) -> Option<$crate::protocol::common::Credentials> {
+                self.payload.credentials.clone()
             }
 
             pub fn will(&self) -> Option<$will> {
