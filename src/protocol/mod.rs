@@ -10,7 +10,7 @@ pub mod v4;
 pub mod v5;
 
 pub use common::payload::*;
-pub use common::Auth;
+pub use common::Credentials;
 pub use header::*;
 pub use packet::PacketType;
 pub use qos::QoS;

@@ -11,10 +11,10 @@ use crate::codec::util::{
     decode_byte, decode_bytes, decode_string, decode_variable_integer, encode_bytes, encode_string,
     encode_variable_integer,
 };
-use crate::protocol::common::{connect, Auth, ConnectHeader};
+use crate::protocol::common::{connect, ConnectHeader};
 use crate::protocol::common::{ConnectFrame, WillFrame};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{Protocol, QoS};
+use crate::protocol::{Credentials, Protocol, QoS};
 use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
@@ -412,7 +412,7 @@ impl Connect {
     /// ```
     pub fn with_properties<S: Into<String>>(
         client_id: S,
-        auth: Option<Auth>,
+        auth: Option<Credentials>,
         will: Option<Will>,
         properties: ConnectProperties,
         keep_alive: u16,
