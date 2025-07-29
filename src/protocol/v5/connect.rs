@@ -423,22 +423,6 @@ connect!(Connect<ConnectProperties, Will>, Protocol::V5);
 
 impl Connect {
     /// Creates a new Connect packet with properties
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Connect, Will, ConnectProperties};
-    /// use std::time::Duration;
-    ///
-    /// let connect = Connect::with_properties(
-    ///     "client",
-    ///     None,
-    ///     None,
-    ///     ConnectProperties::default(),
-    ///     Duration::from_secs(30).as_secs() as u16,
-    ///     true,
-    /// );
-    /// ```
     pub fn with_properties<S: Into<String>>(
         client_id: S,
         auth: Option<Credentials>,
@@ -458,27 +442,6 @@ impl Connect {
     }
 
     /// Returns the Connect properties if present
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use bytes::Bytes;
-    /// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
-    ///
-    /// let properties = ConnectProperties {
-    ///     session_expiry_interval: Some(3600),
-    ///     ..Default::default()
-    /// };
-    ///
-    /// let client = Connect::with_properties(
-    ///     "client",
-    ///     None,
-    ///     None,
-    ///     properties.clone(),
-    ///     30,
-    ///     true);
-    /// assert_eq!(client.properties(), Some(properties));
-    /// ```
     pub fn properties(&self) -> Option<ConnectProperties> {
         self.header.properties.clone()
     }

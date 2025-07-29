@@ -1,9 +1,18 @@
 macro_rules! ack_properties {
     ($name:ident) => {
-        /// Acknowledgment Packet Properties
-        ///
-        /// Contains optional properties for MQTT v5 acknowledgment packets (PubAck, PubRec, PubRel,
-        /// PubComp, SubAck, UnsubAck) that provide additional metadata about the operation.
+        #[doc = concat!("Represents an MQTT `", stringify!($name), "` packet")]
+        #[doc = ""]
+        #[doc = "Contains optional properties for MQTT v5 acknowledgment packet "]
+        #[doc = "that provide additional metadata about the operation."]
+        #[doc = ""]
+        #[doc = "# Example"]
+        #[doc = "```rust"]
+        #[doc = concat!("use mqute_codec::protocol::v5::", stringify!($name), ";")]
+        #[doc = concat!("let properties = ", stringify!($name), " {")]
+        #[doc = "    reason_string: Some(String::from(\"value\")),"]
+        #[doc = "    user_properties: vec![(String::from(\"key\"), String::from(\"value\"))],"]
+        #[doc = "};"]
+        #[doc = "```"]
         #[derive(Debug, Default, Clone, PartialEq, Eq)]
         pub struct $name {
             /// Human-readable description of the acknowledgement
@@ -207,6 +216,16 @@ macro_rules! ack {
         }
 
         #[doc = concat!("Represents an MQTT `", stringify!($name), "` packet")]
+        #[doc = ""]
+        #[doc = "# Example"]
+        #[doc = ""]
+        #[doc = "```rust"]
+        #[doc = concat!("use mqute_codec::protocol::v5::{ReasonCode, ", stringify!($name), "};")]
+        #[doc = ""]
+        #[doc = concat!("let packet = ", stringify!($name), "::new(1234, ReasonCode::Success, None);")]
+        #[doc = "assert_eq!(packet.packet_id(), 1234u16);"]
+        #[doc = "assert_eq!(packet.code(), ReasonCode::Success);"]
+        #[doc = "```"]
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $name {
             header: Header,
@@ -230,7 +249,7 @@ macro_rules! ack {
                 self.header.code
             }
 
-            #[doc = concat!("Returns the ", stringify!($name), " properties if present")]
+            #[doc = concat!("Returns the `", stringify!($name), "` properties if present")]
             pub fn properties(&self) -> Option<$properties> {
                 self.header.properties.clone()
             }

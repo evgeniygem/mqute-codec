@@ -15,6 +15,25 @@ macro_rules! packet {
         /// This enum serves as the main abstraction for working with MQTT packets,
         /// providing a unified interface for packet handling while maintaining
         /// type safety for each specific packet type.
+        ///
+        /// # Example
+        ///
+        /// ```rust
+        /// use mqute_codec::protocol::v4::{Packet, Connect};
+        /// use bytes::{Bytes, BytesMut};
+        ///
+        /// let connect = Connect::new(
+        ///     "client",
+        ///     None,
+        ///     None,
+        ///     30,
+        ///     true);
+        ///
+        /// let mut buf = BytesMut::new();
+        /// let packet = Packet::Connect(connect);
+        ///
+        /// packet.encode(&mut buf).unwrap()
+        /// ```
         pub enum $packet {
             /// Client-initiated connection request. First packet in connection establishment flow
             Connect($connect),

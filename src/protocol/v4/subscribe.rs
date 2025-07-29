@@ -12,6 +12,17 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 
 /// Represents a single topic filter and its requested QoS level.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::TopicQosFilter;
+/// use mqute_codec::protocol::QoS;
+///
+/// let filter = TopicQosFilter::new("topic1", QoS::AtLeastOnce);
+/// assert_eq!(filter.topic, "topic1");
+/// assert_eq!(filter.qos, QoS::AtLeastOnce);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicQosFilter {
     /// The topic filter for the subscription.
@@ -23,17 +34,6 @@ pub struct TopicQosFilter {
 
 impl TopicQosFilter {
     /// Creates a new `TopicQosFilter` instance.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::TopicQosFilter;
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let filter = TopicQosFilter::new("topic1", QoS::AtLeastOnce);
-    /// assert_eq!(filter.topic, "topic1");
-    /// assert_eq!(filter.qos, QoS::AtLeastOnce);
-    /// ```
     pub fn new<T: Into<String>>(topic: T, qos: QoS) -> Self {
         Self {
             topic: topic.into(),
@@ -43,6 +43,20 @@ impl TopicQosFilter {
 }
 
 /// Represents a collection of `TopicQosFilter` instances.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilters, TopicQosFilter};
+/// use mqute_codec::protocol::QoS;
+///
+/// let topic_filters = TopicQosFilters::new(vec![
+///         TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+///         TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+///     ]);
+///
+/// assert_eq!(topic_filters.len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicQosFilters(Vec<TopicQosFilter>);
 
@@ -53,18 +67,6 @@ impl TopicQosFilters {
     /// # Panics
     ///
     /// Panics if the iterator is empty, as at least one topic filter is required.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilters, TopicQosFilter};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let topic_filters = TopicQosFilters::new(vec![
-    ///         TopicQosFilter::new("topic1", QoS::AtLeastOnce),
-    ///         TopicQosFilter::new("topic2", QoS::ExactlyOnce),
-    ///     ]);
-    /// ```
     pub fn new<T: IntoIterator<Item = TopicQosFilter>>(filters: T) -> Self {
         let values: Vec<TopicQosFilter> = filters.into_iter().collect();
 
@@ -76,19 +78,6 @@ impl TopicQosFilters {
     }
 
     /// Returns the number of topic filters in the collection.
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilters, TopicQosFilter};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let filters = vec![
-    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
-    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
-    /// ];
-    /// let topic_filters = TopicQosFilters::new(filters);
-    /// assert_eq!(topic_filters.len(), 2);
-    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -170,6 +159,20 @@ impl From<Vec<TopicQosFilter>> for TopicQosFilters {
 }
 
 /// Represents an MQTT `Subscribe` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilter};
+/// use mqute_codec::protocol::QoS;
+///
+/// let filters = vec![
+///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
+///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
+/// ];
+/// let subscribe = Subscribe::new(123, filters);
+/// assert_eq!(subscribe.packet_id(), 123);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subscribe {
     /// The packet ID for the `Subscribe` packet.
@@ -185,20 +188,6 @@ impl Subscribe {
     /// # Panics
     ///
     /// Panics if `packet_id` is zero.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilter};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let filters = vec![
-    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
-    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
-    /// ];
-    /// let subscribe = Subscribe::new(123, filters);
-    /// assert_eq!(subscribe.packet_id(), 123);
-    /// ```
     pub fn new<T: IntoIterator<Item = TopicQosFilter>>(packet_id: u16, filters: T) -> Self {
         if packet_id == 0 {
             panic!("Packet id is zero");
@@ -209,39 +198,11 @@ impl Subscribe {
     }
 
     /// Returns the packet ID of the `Subscribe` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilter};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let filters = vec![
-    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
-    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
-    /// ];
-    /// let subscribe = Subscribe::new(123, filters);
-    /// assert_eq!(subscribe.packet_id(), 123);
-    /// ```
     pub fn packet_id(&self) -> u16 {
         self.packet_id
     }
 
     /// Returns the list of topic filters and their requested QoS levels.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{Subscribe, TopicQosFilter};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let filters = vec![
-    ///     TopicQosFilter::new("topic1", QoS::AtLeastOnce),
-    ///     TopicQosFilter::new("topic2", QoS::ExactlyOnce),
-    /// ];
-    /// let subscribe = Subscribe::new(123, filters);
-    /// assert_eq!(subscribe.filters().len(), 2);
-    /// ```
     pub fn filters(&self) -> TopicQosFilters {
         self.filters.clone()
     }

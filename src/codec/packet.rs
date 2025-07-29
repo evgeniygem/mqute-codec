@@ -19,6 +19,18 @@ use tokio_util::codec::{Decoder, Encoder};
 /// A raw packet consists of:
 /// - A fixed header (`FixedHeader`), which contains metadata about the packet.
 /// - A payload (`Bytes`), which contains the variable header and payload data.
+///
+/// # Examples
+///
+/// ```
+/// use mqute_codec::codec::{RawPacket};
+/// use mqute_codec::protocol::{FixedHeader, PacketType};
+/// use bytes::Bytes;
+///
+/// let header = FixedHeader::new(PacketType::Publish, 4);
+/// let payload = Bytes::from_static(&[0x00, 0x01, 0x02, 0x03]);
+/// let packet = RawPacket::new(header, payload);
+/// ```
 #[derive(Debug, Clone)]
 pub struct RawPacket {
     /// The fixed header of the packet.
@@ -34,18 +46,6 @@ impl RawPacket {
     /// # Panics
     /// Panics if the length of the payload does not match the remaining length specified
     /// in the fixed header.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mqute_codec::codec::{RawPacket};
-    /// use mqute_codec::protocol::{FixedHeader, PacketType};
-    /// use bytes::Bytes;
-    ///
-    /// let header = FixedHeader::new(PacketType::Publish, 4);
-    /// let payload = Bytes::from_static(&[0x00, 0x01, 0x02, 0x03]);
-    /// let packet = RawPacket::new(header, payload);
-    /// ```
     pub fn new(header: FixedHeader, payload: Bytes) -> Self {
         if header.remaining_len() != payload.len() {
             panic!("Header and payload mismatch");
@@ -58,6 +58,18 @@ impl RawPacket {
 ///
 /// The `PacketCodec` struct implements the `Encoder` and `Decoder` traits from the
 /// `tokio_util::codec` module, allowing it to be used with asynchronous I/O frameworks.
+///
+/// # Examples
+///
+/// ```
+/// use mqute_codec::codec::PacketCodec;
+/// use mqute_codec::protocol::{FixedHeader, PacketType};
+/// use bytes::BytesMut;
+///
+/// let mut codec = PacketCodec::new(Some(1024), Some(1024));
+/// let mut buffer = BytesMut::from(&[0x30, 0x02, 0x00, 0x01][..]); // Example raw packet
+/// let packet = codec.try_decode(&mut buffer).unwrap();
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PacketCodec {
     /// The maximum allowed size for inbound packets.
@@ -69,14 +81,6 @@ pub struct PacketCodec {
 
 impl PacketCodec {
     /// Creates a new `PacketCodec` with the specified size limits.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mqute_codec::codec::PacketCodec;
-    ///
-    /// let codec = PacketCodec::new(Some(1024), Some(1024));
-    /// ```
     pub fn new(inbound_max_size: Option<usize>, outbound_max_size: Option<usize>) -> Self {
         PacketCodec {
             inbound_max_size,
@@ -85,18 +89,6 @@ impl PacketCodec {
     }
 
     /// Attempts to decode a raw packet from the provided buffer.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use mqute_codec::codec::PacketCodec;
-    /// use mqute_codec::protocol::{FixedHeader, PacketType};
-    /// use bytes::BytesMut;
-    ///
-    /// let mut codec = PacketCodec::new(Some(1024), Some(1024));
-    /// let mut buffer = BytesMut::from(&[0x30, 0x02, 0x00, 0x01][..]); // Example raw packet
-    /// let packet = codec.try_decode(&mut buffer).unwrap();
-    /// ```
     pub fn try_decode(&self, dst: &mut BytesMut) -> Result<RawPacket, Error> {
         // Decode the header and check the allowable size
         let header = FixedHeader::decode(dst, self.inbound_max_size)?;

@@ -131,6 +131,14 @@ impl From<RetainHandling> for u8 {
 }
 
 /// Represents a single topic filter with subscription options
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{TopicOptionFilter, RetainHandling};
+/// use mqute_codec::protocol::QoS;
+///
+/// let filter = TopicOptionFilter::new("topic1", QoS::AtLeastOnce, false, true, RetainHandling::DoNotSend);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicOptionFilter {
     /// The topic filter to subscribe to
@@ -165,6 +173,20 @@ impl TopicOptionFilter {
 }
 
 /// Collection of topic filters for a subscription
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilters, TopicOptionFilter, RetainHandling};
+/// use mqute_codec::protocol::QoS;
+///
+/// let filters = vec![
+///     TopicOptionFilter::new("topic1", QoS::AtLeastOnce, false, true, RetainHandling::DoNotSend),
+///     TopicOptionFilter::new("topic2", QoS::ExactlyOnce, true, true, RetainHandling::SendForNewSub),
+/// ];
+/// let topic_filters = TopicOptionFilters::new(filters);
+/// assert_eq!(topic_filters.len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicOptionFilters(Vec<TopicOptionFilter>);
 
@@ -185,19 +207,6 @@ impl TopicOptionFilters {
     }
 
     /// Returns the number of topic filters in the collection.
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilters, TopicOptionFilter, RetainHandling};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let filters = vec![
-    ///     TopicOptionFilter::new("topic1", QoS::AtLeastOnce, false, true, RetainHandling::DoNotSend),
-    ///     TopicOptionFilter::new("topic2", QoS::ExactlyOnce, true, true, RetainHandling::SendForNewSub),
-    /// ];
-    /// let topic_filters = TopicOptionFilters::new(filters);
-    /// assert_eq!(topic_filters.len(), 2);
-    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -323,6 +332,44 @@ id_header!(SubscribeHeader, SubscribeProperties);
 /// - QoS levels
 /// - Retain handling preferences
 /// - Local message filtering
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
+/// use mqute_codec::protocol::QoS;
+///
+/// let subscribe = Subscribe::new(
+///     1234,
+///     None,
+///     vec![
+///         TopicOptionFilter::new(
+///             "sensors/temperature",
+///             QoS::AtLeastOnce,
+///             false,
+///             true,
+///             RetainHandling::Send
+///         ),
+///         TopicOptionFilter::new(
+///             "control/#",
+///             QoS::ExactlyOnce,
+///             true,
+///             false,
+///             RetainHandling::SendForNewSub
+///         )
+///     ]
+/// );
+///
+/// let filters = subscribe.filters();
+/// assert_eq!(filters[0],
+///            TopicOptionFilter::new(
+///                             "sensors/temperature",
+///                             QoS::AtLeastOnce,
+///                             false,
+///                             true,
+///                             RetainHandling::Send
+///                         ));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subscribe {
     header: SubscribeHeader,
@@ -331,33 +378,6 @@ pub struct Subscribe {
 
 impl Subscribe {
     /// Creates a new `Subscribe` packet
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let subscribe = Subscribe::new(
-    ///     1234,
-    ///     None,
-    ///     vec![
-    ///         TopicOptionFilter::new(
-    ///             "sensors/temperature",
-    ///             QoS::AtLeastOnce,
-    ///             false,
-    ///             true,
-    ///             RetainHandling::Send
-    ///         ),
-    ///         TopicOptionFilter::new(
-    ///             "control/#",
-    ///             QoS::ExactlyOnce,
-    ///             true,
-    ///             false,
-    ///             RetainHandling::SendForNewSub
-    ///         )
-    ///     ]
-    /// );
-    /// ```
     pub fn new<T: IntoIterator<Item = TopicOptionFilter>>(
         packet_id: u16,
         properties: Option<SubscribeProperties>,
@@ -370,85 +390,16 @@ impl Subscribe {
     }
 
     /// Returns the packet identifier
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let subscribe = Subscribe::new(1234, None, vec![TopicOptionFilter::new(
-    ///             "control/#",
-    ///             QoS::ExactlyOnce,
-    ///             true,
-    ///             false,
-    ///             RetainHandling::SendForNewSub
-    ///         )]);
-    /// assert_eq!(subscribe.packet_id(), 1234);
-    /// ```
     pub fn packet_id(&self) -> u16 {
         self.header.packet_id
     }
 
     /// Returns the subscription properties
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{RetainHandling, Subscribe, SubscribeProperties, TopicOptionFilter};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let properties = SubscribeProperties {
-    ///     subscription_id: Some(42),  // Shared subscription ID
-    ///     user_properties: vec![("client".into(), "rust".into())],
-    /// };
-    ///
-    ///
-    /// let filter = TopicOptionFilter::new(
-    ///             "sensors/temperature",
-    ///             QoS::AtLeastOnce,
-    ///             false,
-    ///             true,
-    ///             RetainHandling::Send
-    ///         );
-    ///
-    /// let subscribe = Subscribe::new(1234, Some(properties.clone()), vec![filter]);
-    ///
-    /// assert_eq!(subscribe.properties(), Some(properties));
-    /// ```
     pub fn properties(&self) -> Option<SubscribeProperties> {
         self.header.properties.clone()
     }
 
     /// Returns the collection of topic filters
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let subscribe = Subscribe::new(
-    ///     1234,
-    ///     None,
-    ///     vec![
-    ///         TopicOptionFilter::new(
-    ///             "sensors/temperature",
-    ///             QoS::AtLeastOnce,
-    ///             false,
-    ///             true,
-    ///             RetainHandling::Send
-    ///         )
-    ///     ]
-    /// );
-    ///
-    /// let filters = subscribe.filters();
-    /// assert_eq!(filters[0],
-    ///            TopicOptionFilter::new(
-    ///                             "sensors/temperature",
-    ///                             QoS::AtLeastOnce,
-    ///                             false,
-    ///                             true,
-    ///                             RetainHandling::Send
-    ///                         ));
-    /// ```
     pub fn filters(&self) -> TopicOptionFilters {
         self.filters.clone()
     }

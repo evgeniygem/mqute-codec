@@ -19,6 +19,14 @@ use super::util;
 use crate::protocol::PacketType;
 
 /// Represents an MQTT PingReq (Ping Request) packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::PingReq;
+///
+/// let packet = PingReq { };
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingReq {}
 
@@ -27,6 +35,14 @@ util::ping_packet_decode_impl!(PingReq, PacketType::PingReq);
 util::ping_packet_encode_impl!(PingReq, PacketType::PingReq);
 
 /// Represents an MQTT PingResp (Ping Response) packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::PingResp;
+///
+/// let packet = PingResp { };
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingResp {}
 

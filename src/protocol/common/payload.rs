@@ -13,6 +13,17 @@ use std::ops::{Index, IndexMut};
 
 /// The `Codes` module provides a generic structure to handle a collection of MQTT return codes.
 /// These codes are used in various MQTT control packets, such as ConnAck, SubAck, and UnsubAck.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::{Codes, QoS};
+/// use mqute_codec::protocol::v4::ReturnCode;
+///
+/// let values = vec![ReturnCode::Failure, ReturnCode::Success(QoS::AtLeastOnce)];
+/// let codes: Codes<ReturnCode> = Codes::new(values);
+/// assert_eq!(codes.len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Codes<T>(Vec<T>);
 
@@ -26,16 +37,6 @@ where
     /// # Panics
     ///
     /// Panics if the iterator is empty, as at least one code is required.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::{Codes, QoS};
-    /// use mqute_codec::protocol::v4::ReturnCode;
-    ///
-    /// let values = vec![ReturnCode::Failure, ReturnCode::Success(QoS::AtLeastOnce)];
-    /// let codes: Codes<ReturnCode> = Codes::new(values);
-    /// ```
     pub fn new<I: IntoIterator<Item = T>>(codes: I) -> Self {
         let values: Vec<T> = codes.into_iter().collect();
 
@@ -68,17 +69,6 @@ where
     }
 
     /// Returns the number of codes in the `Codes` instance.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::{Codes, QoS};
-    /// use mqute_codec::protocol::v4::ReturnCode;
-    ///
-    /// let values = vec![ReturnCode::Failure, ReturnCode::Success(QoS::AtLeastOnce)];
-    /// let codes: Codes<ReturnCode> = Codes::new(values);
-    /// assert_eq!(codes.len(), 2);
-    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -128,6 +118,16 @@ impl<T> From<Vec<T>> for Codes<T> {
 
 /// The `TopicFilters` provides a structure to handle a collection of MQTT topic filters.
 /// Topic filters are used in MQTT subscriptions and unsubscriptions.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::TopicFilters;
+///
+/// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
+///
+/// assert_eq!(filters.len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicFilters(Vec<String>);
 
@@ -138,14 +138,6 @@ impl TopicFilters {
     /// # Panics
     ///
     /// Panics if the iterator is empty, as at least one topic filter is required.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::TopicFilters;
-    ///
-    /// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
-    /// ```
     pub fn new<T: IntoIterator<Item: Into<String>>>(filters: T) -> Self {
         let values: Vec<String> = filters.into_iter().map(|x| x.into()).collect();
 
@@ -157,12 +149,6 @@ impl TopicFilters {
     }
 
     /// Returns the number of topic filters in the `TopicFilters` instance.
-    /// ```rust
-    /// use mqute_codec::protocol::TopicFilters;
-    ///
-    /// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
-    /// assert_eq!(filters.len(), 2);
-    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }

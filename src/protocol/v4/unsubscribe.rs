@@ -11,6 +11,20 @@ use crate::Error;
 use bytes::{BufMut, BytesMut};
 
 /// Represents an MQTT `Unsubscribe` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::TopicFilters;
+/// use mqute_codec::protocol::v4::Unsubscribe;
+///
+/// let unsubscribe = Unsubscribe::new(1234, vec!["topic1", "topic2"]);
+///
+/// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
+///
+/// assert_eq!(unsubscribe.packet_id(), 1234u16);
+/// assert_eq!(unsubscribe.filters(), filters);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unsubscribe {
     /// The packet ID for the `Unsubscribe` packet.
@@ -26,15 +40,6 @@ impl Unsubscribe {
     /// # Panics
     ///
     /// Panics if `packet_id` is zero.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::TopicFilters;
-    /// use mqute_codec::protocol::v4::Unsubscribe;
-    ///
-    /// let unsubscribe = Unsubscribe::new(123, vec!["topic1", "topic2"]);
-    /// ```
     pub fn new<T: IntoIterator<Item: Into<String>>>(packet_id: u16, filters: T) -> Self {
         if packet_id == 0 {
             panic!("Packet id is zero");
@@ -46,34 +51,12 @@ impl Unsubscribe {
         }
     }
 
-    /// Returns the packet ID of the `UNSUBSCRIBE` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Unsubscribe;
-    ///
-    /// let filters = vec!["topic1", "topic2"];
-    /// let unsubscribe = Unsubscribe::new(123, filters);
-    /// assert_eq!(unsubscribe.packet_id(), 123);
-    /// ```
+    /// Returns the packet ID of the `Unsubscribe` packet.
     pub fn packet_id(&self) -> u16 {
         self.packet_id
     }
 
     /// Returns the list of topic filters to unsubscribe from.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Unsubscribe;
-    /// use mqute_codec::protocol::TopicFilters;
-    ///
-    /// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
-    ///
-    /// let unsubscribe = Unsubscribe::new(123, vec!["topic1".to_string(), "topic2".to_string()]);
-    /// assert_eq!(unsubscribe.filters(), filters);
-    /// ```
     pub fn filters(&self) -> TopicFilters {
         self.filters.clone()
     }
