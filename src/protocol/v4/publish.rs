@@ -10,16 +10,32 @@ use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
 use crate::Error;
 use bytes::{Bytes, BytesMut};
 
-/// Represents an MQTT `PUBLISH` packet.
+/// Represents an MQTT `Publish` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::Publish;
+/// use mqute_codec::protocol::{QoS, Flags};
+/// use bytes::Bytes;
+///
+/// let flags = Flags::new(QoS::AtLeastOnce);
+/// let publish = Publish::new("topic", 1234, Bytes::from("message"), flags);
+///
+/// assert_eq!(publish.flags(), flags);
+/// assert_eq!(publish.topic(), "topic");
+/// assert_eq!(publish.packet_id(), Some(1234));
+/// assert_eq!(publish.payload(), Bytes::from("message"));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Publish {
-    /// The header of the `PUBLISH` packet, containing the topic and packet ID (for QoS > 0).
+    /// The header of the `Publish` packet, containing the topic and packet ID (for QoS > 0).
     header: PublishHeader,
 
-    /// The payload of the `PUBLISH` packet, containing the message data.
+    /// The payload of the `Publish` packet, containing the message data.
     payload: Bytes,
 
-    /// The flags for the `PUBLISH` packet, including QoS, retain, and duplicate delivery.
+    /// The flags for the `Publish` packet, including QoS, retain, and duplicate delivery.
     flags: Flags,
 }
 
@@ -29,17 +45,6 @@ impl Publish {
     /// # Panics
     ///
     /// Panics if `packet_id` is zero for QoS > 0.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Publish;
-    /// use mqute_codec::protocol::{QoS, Flags};
-    /// use bytes::Bytes;
-    ///
-    /// let flags = Flags::new(QoS::AtLeastOnce);
-    /// let publish = Publish::new("topic", 123, Bytes::from("message"), flags);
-    /// ```
     pub fn new<T: Into<String>>(topic: T, packet_id: u16, payload: Bytes, flags: Flags) -> Self {
         if flags.qos != QoS::AtMostOnce && packet_id == 0 {
             panic!("Control packets must contain a non-zero packet identifier at QoS > 0");
@@ -52,58 +57,22 @@ impl Publish {
         }
     }
 
-    /// Returns the flags for the `PUBLISH` packet.
+    /// Returns the flags for the `Publish` packet.
     ///
     /// The flags include QoS, retain, and duplicate delivery settings.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Publish;
-    /// use mqute_codec::protocol::{QoS, Flags};
-    /// use bytes::Bytes;
-    ///
-    /// let flags = Flags::new(QoS::AtLeastOnce);
-    /// let publish = Publish::new("topic", 123, Bytes::from("message"), flags);
-    /// assert_eq!(publish.flags(), flags);
-    /// ```
     pub fn flags(&self) -> Flags {
         self.flags
     }
 
-    /// Returns the topic of the `PUBLISH` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Publish;
-    /// use mqute_codec::protocol::{QoS, Flags};
-    /// use bytes::Bytes;
-    ///
-    /// let flags = Flags::new(QoS::AtLeastOnce);
-    /// let publish = Publish::new("topic", 123, Bytes::from("message"), flags);
-    /// assert_eq!(publish.topic(), "topic");
-    /// ```
+    /// Returns the topic of the `Publish` packet.
     pub fn topic(&self) -> String {
         self.header.topic.clone()
     }
 
-    /// Returns the packet ID of the `PUBLISH` packet.
+    /// Returns the packet ID of the `Publish` packet.
     ///
     /// For QoS 0, this method returns `None` because no packet ID is used.
     /// For QoS 1 and 2, it returns the packet ID as `Some(u16)`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Publish;
-    /// use mqute_codec::protocol::{QoS, Flags};
-    /// use bytes::Bytes;
-    ///
-    /// let flags = Flags::new(QoS::AtLeastOnce);
-    /// let publish = Publish::new("topic", 123, Bytes::from("message"), flags);
-    /// assert_eq!(publish.packet_id(), Some(123));
-    /// ```
     pub fn packet_id(&self) -> Option<u16> {
         if self.flags.qos != QoS::AtMostOnce {
             Some(self.header.packet_id)
@@ -112,19 +81,7 @@ impl Publish {
         }
     }
 
-    /// Returns the payload of the `PUBLISH` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Publish;
-    /// use mqute_codec::protocol::{QoS, Flags};
-    /// use bytes::Bytes;
-    ///
-    /// let flags = Flags::new(QoS::AtLeastOnce);
-    /// let publish = Publish::new("topic", 123, Bytes::from("message"), flags);
-    /// assert_eq!(publish.payload(), Bytes::from("message"));
-    /// ```
+    /// Returns the payload of the `Publish` packet.
     pub fn payload(&self) -> Bytes {
         self.payload.clone()
     }

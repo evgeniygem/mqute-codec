@@ -15,36 +15,27 @@ use bytes::{Buf, BufMut, BytesMut};
 ///
 /// The `ConnAck` packet is sent by the server to the client in response to a `Connect` request.
 /// It contains a `ConnectReturnCode` that indicates the result of the connection attempt.
+///
+/// # Examples
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::ConnectReturnCode;
+/// use mqute_codec::protocol::v3::ConnAck;
+///
+/// let connack = ConnAck::new(ConnectReturnCode::Success);
+/// let code = connack.code();
+/// assert_eq!(code, ConnectReturnCode::Success);
+/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ConnAck(ConnectReturnCode);
 
 impl ConnAck {
     /// Creates a new `ConnAck` packet with the specified return code.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::ConnectReturnCode;
-    /// use mqute_codec::protocol::v3::ConnAck;
-    ///
-    /// let connack = ConnAck::new(ConnectReturnCode::Success);
-    /// ```
     pub fn new(code: ConnectReturnCode) -> Self {
         ConnAck(code)
     }
 
     /// Returns the `ConnectReturnCode` contained in the `ConnAck` packet.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::ConnectReturnCode;
-    /// use mqute_codec::protocol::v3::ConnAck;
-    ///
-    /// let connack = ConnAck::new(ConnectReturnCode::Success);
-    /// let code = connack.code();
-    /// assert_eq!(code, ConnectReturnCode::Success);
-    /// ```
     pub fn code(&self) -> ConnectReturnCode {
         self.0
     }

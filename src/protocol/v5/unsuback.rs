@@ -41,6 +41,35 @@ id_header!(UnsubAckHeader, UnsubAckProperties);
 /// - Packet Identifier matching the UNSUBSCRIBE packet
 /// - List of return codes indicating unsubscription results
 /// - Optional properties (v5 only)
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::Codes;
+/// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
+///
+/// // Successful unsubscription
+/// let unsuback = UnsubAck::new(
+///     1234,
+///     None,
+///     vec![ReasonCode::Success, ReasonCode::Success]
+/// );
+///
+/// assert_eq!(unsuback.packet_id(), 1234u16);
+///
+/// // Mixed results unsubscription
+/// let unsuback = UnsubAck::new(
+///     5678,
+///     None,
+///     vec![
+///         ReasonCode::Success,
+///         ReasonCode::NoSubscriptionExisted
+///     ]
+/// );
+///
+/// let codes = Codes::new(vec![ReasonCode::Success, ReasonCode::NoSubscriptionExisted]);
+/// assert_eq!(unsuback.codes(), codes);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnsubAck {
     header: UnsubAckHeader,
@@ -53,29 +82,6 @@ impl UnsubAck {
     /// # Panics
     /// - If no reason codes are provided
     /// - If any reason code is invalid for `UnsubAck`
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
-    ///
-    /// // Successful unsubscription
-    /// let unsuback = UnsubAck::new(
-    ///     1234,
-    ///     None,
-    ///     vec![ReasonCode::Success, ReasonCode::Success]
-    /// );
-    ///
-    /// // Mixed results unsubscription
-    /// let unsuback_mixed = UnsubAck::new(
-    ///     5678,
-    ///     None,
-    ///     vec![
-    ///         ReasonCode::Success,
-    ///         ReasonCode::NoSubscriptionExisted
-    ///     ]
-    /// );
-    /// ```
     pub fn new<T>(packet_id: u16, properties: Option<UnsubAckProperties>, codes: T) -> Self
     where
         T: IntoIterator<Item = ReasonCode>,
@@ -102,67 +108,16 @@ impl UnsubAck {
     }
 
     /// Returns the packet identifier
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
-    ///
-    /// // Successful unsubscription
-    /// let unsuback = UnsubAck::new(
-    ///     1234,
-    ///     None,
-    ///     vec![ReasonCode::Success, ReasonCode::Success]
-    /// );
-    /// assert_eq!(unsuback.packet_id(), 1234u16);
-    /// ```
     pub fn packet_id(&self) -> u16 {
         self.header.packet_id
     }
 
     /// Returns the list of reason codes
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::Codes;
-    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
-    ///
-    /// // Successful unsubscription
-    /// let unsuback = UnsubAck::new(
-    ///     1234,
-    ///     None,
-    ///     vec![ReasonCode::Success, ReasonCode::Success]
-    /// );
-    ///
-    /// let codes = Codes::new(vec![ReasonCode::Success, ReasonCode::Success]);
-    /// assert_eq!(unsuback.codes(), codes);
-    /// ```
     pub fn codes(&self) -> Codes<ReasonCode> {
         self.codes.clone()
     }
 
     /// Returns a copy of the properties (if any)
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode, UnsubAckProperties};
-    ///
-    /// let properties = UnsubAckProperties {
-    ///     reason_string: None,
-    ///     user_properties: vec![("key".to_string(), "value".to_string())]
-    /// };
-    ///
-    /// // Successful unsubscription
-    /// let unsuback = UnsubAck::new(
-    ///     1234,
-    ///     Some(properties.clone()),
-    ///     vec![ReasonCode::Success, ReasonCode::Success]
-    /// );
-    ///
-    /// assert_eq!(unsuback.properties(), Some(properties));
-    /// ```
     pub fn properties(&self) -> Option<UnsubAckProperties> {
         self.header.properties.clone()
     }

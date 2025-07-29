@@ -22,6 +22,19 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 ///
 /// These properties provide additional connection-related information from the server
 /// to the client, including session configuration and server capabilities.
+///
+/// # Example
+///
+/// ```rust
+///
+/// use mqute_codec::protocol::v5::ConnAckProperties;
+///
+/// let connack_properties = ConnAckProperties {
+///     session_expiry_interval: Some(3600u32),
+///     retain_available: Some(true),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ConnAckProperties {
     /// Duration in seconds the session will be kept after disconnection
@@ -289,6 +302,26 @@ impl ConnAckHeader {
 /// The `ConnAck` packet is sent by the server in response to a `Connect` packet
 /// from a client. It indicates whether the connection was accepted and provides
 /// session status and optional properties.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{ConnAck, ConnAckProperties, ReasonCode};
+///
+/// let properties = ConnAckProperties {
+///     session_expiry_interval: Some(3600),
+///     receive_maximum: Some(10),
+///     ..Default::default()
+/// };
+/// let connack = ConnAck::new(
+///     ReasonCode::Success,
+///     true,
+///     Some(properties)
+/// );
+///
+/// assert_eq!(connack.code(), ReasonCode::Success);
+/// assert!(connack.session_present());
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConnAck {
     header: ConnAckHeader,
@@ -296,25 +329,6 @@ pub struct ConnAck {
 
 impl ConnAck {
     /// Creates a new `ConnAck` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{ConnAck, ConnAckProperties, ReasonCode};
-    ///
-    /// let properties = ConnAckProperties {
-    ///     session_expiry_interval: Some(3600),
-    ///     receive_maximum: Some(10),
-    ///     ..Default::default()
-    /// };
-    /// let connack = ConnAck::new(
-    ///     ReasonCode::Success,
-    ///     true,
-    ///     Some(properties)
-    /// );
-    /// assert_eq!(connack.code(), ReasonCode::Success);
-    /// assert!(connack.session_present());
-    /// ```
     pub fn new(
         code: ReasonCode,
         session_present: bool,
@@ -326,48 +340,16 @@ impl ConnAck {
     }
 
     /// Returns the reason code indicating the connection result.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{ConnAck, ReasonCode};
-    ///
-    /// let connack = ConnAck::new(ReasonCode::Success, false, None);
-    /// assert_eq!(connack.code(), ReasonCode::Success);
-    /// ```
     pub fn code(&self) -> ReasonCode {
         self.header.code
     }
 
     /// Returns whether the server has a previous session for this client.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::ConnAck;
-    /// use mqute_codec::protocol::v5::ReasonCode;
-    ///
-    /// let connack = ConnAck::new(ReasonCode::Success, true, None);
-    /// assert!(connack.session_present());
-    /// ```
     pub fn session_present(&self) -> bool {
         self.header.session_present
     }
 
     /// Returns the optional properties of the `ConnAck` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{ConnAck, ConnAckProperties, ReasonCode};
-    ///
-    /// let properties = ConnAckProperties {
-    ///     session_expiry_interval: Some(3600),
-    ///     ..Default::default()
-    /// };
-    /// let connack = ConnAck::new(ReasonCode::Success, false, Some(properties.clone()));
-    /// assert_eq!(connack.properties(), Some(properties));
-    /// ```
     pub fn properties(&self) -> Option<ConnAckProperties> {
         self.header.properties.clone()
     }

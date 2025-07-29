@@ -18,7 +18,7 @@ use std::cmp::PartialEq;
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust
 /// use mqute_codec::protocol::QoS;
 /// use mqute_codec::protocol::Flags;
 ///
@@ -63,7 +63,7 @@ impl Flags {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::QoS;
     /// use mqute_codec::protocol::Flags;
     ///
@@ -82,7 +82,7 @@ impl Flags {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::Flags;
     ///
     /// let flags = Flags::default();

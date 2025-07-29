@@ -8,6 +8,14 @@ use super::util;
 use crate::protocol::PacketType;
 
 /// Represents an MQTT `Disconnect` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::Disconnect;
+///
+/// let packet = Disconnect { };
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Disconnect {}
 

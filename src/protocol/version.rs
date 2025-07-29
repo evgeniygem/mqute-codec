@@ -29,7 +29,7 @@ impl From<Protocol> for u8 {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::Protocol;
     ///
     /// let protocol = Protocol::V5;
@@ -55,7 +55,7 @@ impl TryFrom<u8> for Protocol {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::Protocol;
     /// use mqute_codec::Error;
     ///
@@ -83,7 +83,7 @@ impl Protocol {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::Protocol;
     ///
     /// let protocol = Protocol::V3;

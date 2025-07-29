@@ -39,7 +39,7 @@ impl TryFrom<u8> for QoS {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::QoS;
     /// use mqute_codec::Error;
     ///
@@ -64,7 +64,7 @@ impl From<QoS> for u8 {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::QoS;
     ///
     /// let qos = QoS::ExactlyOnce;

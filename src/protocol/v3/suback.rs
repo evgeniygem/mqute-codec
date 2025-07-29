@@ -9,8 +9,23 @@ use crate::protocol::QoS;
 use crate::Error;
 
 /// Represents the return codes for a `SubAck` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::QoS;
+/// use crate::mqute_codec::protocol::v3::ReturnCode;
+///
+/// let retcode = ReturnCode::new(QoS::AtMostOnce);
+/// ```
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ReturnCode(QoS);
+
+impl ReturnCode {
+    pub fn new(qos: QoS) -> Self {
+        ReturnCode { 0: qos }
+    }
+}
 
 impl TryFrom<u8> for ReturnCode {
     type Error = Error;

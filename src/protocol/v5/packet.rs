@@ -17,6 +17,33 @@ use crate::Error;
 /// This enum serves as the main abstraction for working with MQTT packets,
 /// providing a unified interface for packet handling while maintaining
 /// type safety for each specific packet type.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::Packet;
+/// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
+/// use bytes::{Bytes, BytesMut};
+///
+/// let properties = ConnectProperties {
+///     session_expiry_interval: Some(3600),
+///     ..Default::default()
+/// };
+///
+/// let connect = Connect::with_properties(
+///     "client",
+///     None,
+///     None,
+///     properties.clone(),
+///     30,
+///     true);
+///
+/// let mut buf = BytesMut::new();
+///
+/// let packet = Packet::Connect(connect);
+///
+/// packet.encode(&mut buf).unwrap()
+/// ```
 #[derive(Debug)]
 pub enum Packet {
     /// Client-initiated connection request. First packet in connection establishment flow

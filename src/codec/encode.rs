@@ -20,7 +20,7 @@ pub trait Encode {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::codec::{Encode, Encoded};
     /// use bytes::BytesMut;
     /// use mqute_codec::Error;
@@ -51,7 +51,7 @@ pub trait Encode {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::codec::{Encode, Encoded};
     /// use bytes::BytesMut;
     /// use mqute_codec::Error;
@@ -83,7 +83,7 @@ pub trait Encode {
 ///
 /// # Examples
 ///
-/// ```
+/// ```rust
 /// use mqute_codec::codec::{Encode, Encoded};
 /// use bytes::BytesMut;
 /// use mqute_codec::Error;

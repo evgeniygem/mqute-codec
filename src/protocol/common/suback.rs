@@ -1,6 +1,6 @@
 /// Generates a SubAck packet structure with specific code types.
 ///
-/// The `suback!` macro is used to generate a SubAck packet structure that includes
+/// The `suback!` macro is used to generate a `SubAck` packet structure that includes
 /// the payload, and encoding/decoding logic for a specific MQTT protocol version (only V4 and V3).
 macro_rules! suback {
     ($code:ty) => {
@@ -9,6 +9,19 @@ macro_rules! suback {
         /// The `SubAck` packet is sent by the server to the client to confirm receipt and
         /// processing of a subscription request. It contains return codes indicating the
         /// maximum QoS level granted for each requested subscription.
+        ///
+        /// # Examples
+        ///
+        /// ```rust
+        /// use mqute_codec::protocol::QoS;
+        /// use mqute_codec::protocol::v4::{ReturnCode, SubAck};
+        ///
+        /// // Single subscription
+        /// let suback = SubAck::new(1, vec![ReturnCode::Success(QoS::AtMostOnce)]);
+        ///
+        /// let codes = suback.codes();
+        /// assert_eq!(codes[0], ReturnCode::Success(QoS::AtMostOnce));
+        /// ```
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct SubAck {
             packet_id: u16,
@@ -16,24 +29,11 @@ macro_rules! suback {
         }
 
         impl SubAck {
-            /// Creates a new SubAck packet
-            ///
-            /// # Parameters
-            /// - `packet_id`: Must match the packet identifier from the `Subscribe` packet
-            /// - `codes`: Iterator of return codes for each subscription
+            /// Creates a new `SubAck` packet
             ///
             /// # Panics
+            ///
             /// Panics if packet_id is 0 (invalid packet identifier)
-            ///
-            /// # Examples
-            ///
-            /// ```rust
-            /// use mqute_codec::protocol::QoS;
-            /// use mqute_codec::protocol::v4::{ReturnCode, SubAck};
-            ///
-            /// // Single subscription
-            /// let suback = SubAck::new(1, vec![ReturnCode::Success(QoS::AtMostOnce)]);
-            /// ```
             pub fn new<I: IntoIterator<Item = $code>>(packet_id: u16, codes: I) -> Self {
                 if packet_id == 0 {
                     panic!("Packet id is zero");
@@ -49,22 +49,6 @@ macro_rules! suback {
             /// Each code indicates the result of the corresponding subscription request:
             /// - Success variants contain the granted QoS level
             /// - Failure indicates the subscription was not accepted
-            ///
-            /// # Examples
-            ///
-            /// ```rust
-            /// use mqute_codec::protocol::QoS;
-            /// use mqute_codec::protocol::v4::{ReturnCode, SubAck};
-            ///
-            /// let suback = SubAck::new(1, vec![
-            ///     ReturnCode::Success(QoS::AtMostOnce),
-            ///     ReturnCode::Failure
-            /// ]);
-            ///
-            /// let codes = suback.codes();
-            /// assert_eq!(codes[0], ReturnCode::Success(QoS::AtMostOnce));
-            /// assert_eq!(codes[1], ReturnCode::Failure);
-            /// ```
             pub fn codes(&self) -> $crate::protocol::Codes<$code> {
                 self.codes.clone()
             }
@@ -72,16 +56,6 @@ macro_rules! suback {
             /// Returns the packet identifier
             ///
             /// This matches the identifier from the corresponding `Subscribe` packet
-            ///
-            /// # Examples
-            ///
-            /// ```rust
-            /// use mqute_codec::protocol::QoS;
-            /// use mqute_codec::protocol::v4::{SubAck, ReturnCode};
-            ///
-            /// let suback = SubAck::new(12345, vec![ReturnCode::Success(QoS::AtMostOnce)]);
-            /// assert_eq!(suback.packet_id(), 12345);
-            /// ```
             pub fn packet_id(&self) -> u16 {
                 self.packet_id
             }

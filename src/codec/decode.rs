@@ -17,7 +17,7 @@ pub trait Decode: Sized {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::{FixedHeader, PacketType};
     /// use mqute_codec::codec::{Decode, RawPacket};
     /// use mqute_codec::Error;
