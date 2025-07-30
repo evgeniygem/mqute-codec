@@ -9,12 +9,25 @@ use crate::codec::util::{decode_string, encode_string};
 use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
+use std::ops::{Index, IndexMut};
 
 /// The `Codes` module provides a generic structure to handle a collection of MQTT return codes.
-/// These codes are used in various MQTT control packets, such as CONNACK, SUBACK, and UNSUBACK.
+/// These codes are used in various MQTT control packets, such as ConnAck, SubAck, and UnsubAck.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::{Codes, QoS};
+/// use mqute_codec::protocol::v4::ReturnCode;
+///
+/// let values = vec![ReturnCode::Failure, ReturnCode::Success(QoS::AtLeastOnce)];
+/// let codes: Codes<ReturnCode> = Codes::new(values);
+/// assert_eq!(codes.len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Codes<T>(Vec<T>);
 
+#[allow(clippy::len_without_is_empty)]
 impl<T> Codes<T>
 where
     T: TryFrom<u8, Error = Error> + Into<u8> + Copy,
@@ -24,16 +37,6 @@ where
     /// # Panics
     ///
     /// Panics if the iterator is empty, as at least one code is required.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::{Codes, QoS};
-    /// use mqute_codec::protocol::v4::ReturnCode;
-    ///
-    /// let values = vec![ReturnCode::Failure, ReturnCode::Success(QoS::AtLeastOnce)];
-    /// let codes: Codes<ReturnCode> = Codes::new(values);
-    /// ```
     pub fn new<I: IntoIterator<Item = T>>(codes: I) -> Self {
         let values: Vec<T> = codes.into_iter().collect();
 
@@ -99,10 +102,10 @@ impl<T> FromIterator<T> for Codes<T> {
     }
 }
 
-impl<T> Into<Vec<T>> for Codes<T> {
+impl<T> From<Codes<T>> for Vec<T> {
     #[inline]
-    fn into(self) -> Vec<T> {
-        self.0
+    fn from(value: Codes<T>) -> Self {
+        value.0
     }
 }
 
@@ -115,23 +118,26 @@ impl<T> From<Vec<T>> for Codes<T> {
 
 /// The `TopicFilters` provides a structure to handle a collection of MQTT topic filters.
 /// Topic filters are used in MQTT subscriptions and unsubscriptions.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::TopicFilters;
+///
+/// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
+///
+/// assert_eq!(filters.len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicFilters(Vec<String>);
 
+#[allow(clippy::len_without_is_empty)]
 impl TopicFilters {
     /// Creates a new `TopicFilters` instance from an iterator of topic filters.
     ///
     /// # Panics
     ///
     /// Panics if the iterator is empty, as at least one topic filter is required.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::TopicFilters;
-    ///
-    /// let filters = TopicFilters::new(vec!["topic1".to_string(), "topic2".to_string()]);
-    /// ```
     pub fn new<T: IntoIterator<Item: Into<String>>>(filters: T) -> Self {
         let values: Vec<String> = filters.into_iter().map(|x| x.into()).collect();
 
@@ -143,12 +149,6 @@ impl TopicFilters {
     }
 
     /// Returns the number of topic filters in the `TopicFilters` instance.
-    /// ```rust
-    /// use mqute_codec::protocol::TopicFilters;
-    ///
-    /// let filters = TopicFilters::new(vec!["topic1".to_string(), "topic2".to_string()]);
-    /// assert_eq!(filters.len(), 2);
-    /// ```
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -211,10 +211,10 @@ impl FromIterator<String> for TopicFilters {
     }
 }
 
-impl Into<Vec<String>> for TopicFilters {
+impl From<TopicFilters> for Vec<String> {
     #[inline]
-    fn into(self) -> Vec<String> {
-        self.0
+    fn from(value: TopicFilters) -> Self {
+        value.0
     }
 }
 
@@ -222,5 +222,18 @@ impl From<Vec<String>> for TopicFilters {
     #[inline]
     fn from(value: Vec<String>) -> Self {
         TopicFilters(value)
+    }
+}
+
+impl<T> Index<usize> for Codes<T> {
+    type Output = T;
+    fn index(&self, index: usize) -> &Self::Output {
+        self.0.index(index)
+    }
+}
+
+impl<T> IndexMut<usize> for Codes<T> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.0.index_mut(index)
     }
 }

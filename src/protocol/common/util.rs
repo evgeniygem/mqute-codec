@@ -9,24 +9,83 @@ macro_rules! packet {
      $suback:ident, $unsubscribe:ident, $unsuback:ident,
      $pingreq:ident, $pingresp:ident, $disconnect:ident) => {
         use $crate::codec::{Decode, Encode};
+
+        /// Represents all possible MQTT v3.x packet types
+        ///
+        /// This enum serves as the main abstraction for working with MQTT packets,
+        /// providing a unified interface for packet handling while maintaining
+        /// type safety for each specific packet type.
+        ///
+        /// # Example
+        ///
+        /// ```rust
+        /// use mqute_codec::protocol::v4::{Packet, Connect};
+        /// use bytes::{Bytes, BytesMut};
+        ///
+        /// let connect = Connect::new(
+        ///     "client",
+        ///     None,
+        ///     None,
+        ///     30,
+        ///     true);
+        ///
+        /// let mut buf = BytesMut::new();
+        /// let packet = Packet::Connect(connect);
+        ///
+        /// packet.encode(&mut buf).unwrap()
+        /// ```
         pub enum $packet {
+            /// Client-initiated connection request. First packet in connection establishment flow
             Connect($connect),
+
+            /// Server connection acknowledgment. Sent in response to CONNECT packet
             ConnAck($connack),
+
+            /// Message publication. Primary message delivery mechanism.
             Publish($publish),
+
+            /// QoS 1 publication acknowledgment. Acknowledges receipt of QoS 1 messages
             PubAck($puback),
+
+            /// QoS 2 publication received (part 1). First packet in QoS 2 protocol flow
             PubRec($pubrec),
+
+            /// QoS 2 publication release (part 2). Second packet in QoS 2 protocol flow
             PubRel($pubrel),
+
+            /// QoS 2 publication complete (part 3). Final packet in QoS 2 protocol flow
             PubComp($pubcomp),
+
+            /// Subscription request. Begins subscription creation/modification
             Subscribe($subscribe),
+
+            /// Subscription acknowledgment. Confirms subscription processing results
             SubAck($suback),
+
+            /// Unsubscription request. Begins subscription termination
             Unsubscribe($unsubscribe),
+
+            /// Unsubscription acknowledgment. Confirms unsubscription processing
             UnsubAck($unsuback),
+
+            /// Keep-alive ping request. Must be responded to with PINGRESP
             PingReq($pingreq),
+
+            /// Keep-alive ping response. Sent in response to PINGREQ to confirm connection is active
             PingResp($pingresp),
+
+            /// Graceful connection termination. Properly closes the MQTT connection
             Disconnect($disconnect),
         }
 
         impl $packet {
+            /// Decodes a raw MQTT packet into the appropriate Packet variant
+            ///
+            /// This is the primary entry point for packet processing, handling:
+            /// - Packet type identification
+            /// - Payload validation
+            /// - Special cases for empty payload packets
+            /// - Delegation to specific packet decoders
             pub fn decode(raw_packet: $crate::codec::RawPacket) -> Result<Self, $crate::Error> {
                 let packet_type = raw_packet.header.packet_type();
 
@@ -87,6 +146,10 @@ macro_rules! packet {
                 Ok(decoded)
             }
 
+            /// Encodes the packet into its wire format
+            ///
+            /// Delegates to the specific packet implementation's encoder while
+            /// providing a unified interface for all packet types.
             pub fn encode(&self, buf: &mut bytes::BytesMut) -> Result<(), $crate::Error> {
                 match self {
                     Self::Connect(packet) => packet.encode(buf),

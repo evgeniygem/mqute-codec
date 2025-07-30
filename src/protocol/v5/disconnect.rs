@@ -62,7 +62,7 @@ impl PropertyFrame for DisconnectProperties {
         );
 
         property_encode!(&self.reason_string, Property::ReasonString, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
         property_encode!(&self.server_reference, Property::ServerReference, buf);
     }
 
@@ -88,7 +88,7 @@ impl PropertyFrame for DisconnectProperties {
                 Property::ReasonString => {
                     property_decode!(&mut reason_string, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut user_properties, buf);
                 }
                 Property::ServerReference => {
@@ -197,6 +197,21 @@ impl DisconnectHeader {
 }
 
 /// Represents an MQTT v5 `Disconnect` packet
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{Disconnect, DisconnectProperties, ReasonCode};
+///
+/// let properties = DisconnectProperties {
+///     reason_string: Some("Reason string".to_string()),
+///     server_reference: Some("backup.example.com".to_string()),
+///     ..Default::default()
+/// };
+///
+/// let disconnect = Disconnect::new(ReasonCode::Success, Some(properties.clone()));
+/// assert_eq!(disconnect.properties(), Some(properties));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Disconnect {
     header: DisconnectHeader,
@@ -204,13 +219,6 @@ pub struct Disconnect {
 
 impl Disconnect {
     /// Creates a new `Disconnect` packet
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Disconnect, DisconnectProperties, ReasonCode};
-    ///
-    /// let disconnect = Disconnect::new(ReasonCode::ServerShuttingDown, None);
-    /// ```
     pub fn new(code: ReasonCode, properties: Option<DisconnectProperties>) -> Self {
         Disconnect {
             header: DisconnectHeader::new(code, properties),
@@ -218,34 +226,11 @@ impl Disconnect {
     }
 
     /// Returns the reason code
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Disconnect, ReasonCode};
-    ///
-    /// let disconnect = Disconnect::new(ReasonCode::NormalDisconnection, None);
-    /// assert_eq!(disconnect.code(), ReasonCode::NormalDisconnection);
-    /// ```
     pub fn code(&self) -> ReasonCode {
         self.header.code
     }
 
     /// Returns a copy of the properties (if any)
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Disconnect, DisconnectProperties, ReasonCode};
-    ///
-    /// let properties = DisconnectProperties {
-    ///     reason_string: Some("Reason string".to_string()),
-    ///     server_reference: Some("backup.example.com".to_string()),
-    ///     ..Default::default()
-    /// };
-    /// let disconnect = Disconnect::new(ReasonCode::Success, Some(properties.clone()));
-    /// assert_eq!(disconnect.properties(), Some(properties));
-    /// ```
     pub fn properties(&self) -> Option<DisconnectProperties> {
         self.header.properties.clone()
     }

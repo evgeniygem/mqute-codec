@@ -17,6 +17,7 @@ use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
 use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
+use std::ops::{Index, IndexMut};
 
 /// Properties specific to `Subscribe` packets
 ///
@@ -25,6 +26,7 @@ use std::borrow::Borrow;
 /// - User Properties (key-value pairs for extended metadata)
 ///
 /// # Example
+///
 /// ```rust
 /// use mqute_codec::protocol::v5::SubscribeProperties;
 ///
@@ -61,7 +63,7 @@ impl PropertyFrame for SubscribeProperties {
             encode_variable_integer(buf, value).expect("");
         }
 
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
     }
 
     /// Decodes properties from a byte buffer
@@ -85,7 +87,7 @@ impl PropertyFrame for SubscribeProperties {
                     }
                     subscription_id = Some(decode_variable_integer(buf)? as u32);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
@@ -123,13 +125,22 @@ impl TryFrom<u8> for RetainHandling {
     }
 }
 
-impl Into<u8> for RetainHandling {
-    fn into(self) -> u8 {
-        self as u8
+impl From<RetainHandling> for u8 {
+    fn from(value: RetainHandling) -> Self {
+        value as u8
     }
 }
 
 /// Represents a single topic filter with subscription options
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{TopicOptionFilter, RetainHandling};
+/// use mqute_codec::protocol::QoS;
+///
+/// let filter = TopicOptionFilter::new("topic1", QoS::AtLeastOnce, false, true, RetainHandling::DoNotSend);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicOptionFilter {
     /// The topic filter to subscribe to
@@ -164,9 +175,24 @@ impl TopicOptionFilter {
 }
 
 /// Collection of topic filters for a subscription
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilters, TopicOptionFilter, RetainHandling};
+/// use mqute_codec::protocol::QoS;
+///
+/// let filters = vec![
+///     TopicOptionFilter::new("topic1", QoS::AtLeastOnce, false, true, RetainHandling::DoNotSend),
+///     TopicOptionFilter::new("topic2", QoS::ExactlyOnce, true, true, RetainHandling::SendForNewSub),
+/// ];
+/// let topic_filters = TopicOptionFilters::new(filters);
+/// assert_eq!(topic_filters.len(), 2);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TopicOptionFilters(Vec<TopicOptionFilter>);
 
+#[allow(clippy::len_without_is_empty)]
 impl TopicOptionFilters {
     /// Creates a new collection of topic filters
     ///
@@ -182,7 +208,7 @@ impl TopicOptionFilters {
         TopicOptionFilters(values)
     }
 
-    /// Returns the number of topic filters
+    /// Returns the number of topic filters in the collection.
     pub fn len(&self) -> usize {
         self.0.len()
     }
@@ -271,10 +297,10 @@ impl FromIterator<TopicOptionFilter> for TopicOptionFilters {
     }
 }
 
-impl Into<Vec<TopicOptionFilter>> for TopicOptionFilters {
+impl From<TopicOptionFilters> for Vec<TopicOptionFilter> {
     #[inline]
-    fn into(self) -> Vec<TopicOptionFilter> {
-        self.0
+    fn from(value: TopicOptionFilters) -> Self {
+        value.0
     }
 }
 
@@ -282,6 +308,20 @@ impl From<Vec<TopicOptionFilter>> for TopicOptionFilters {
     #[inline]
     fn from(value: Vec<TopicOptionFilter>) -> Self {
         TopicOptionFilters(value)
+    }
+}
+
+impl Index<usize> for TopicOptionFilters {
+    type Output = TopicOptionFilter;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.0.index(index)
+    }
+}
+
+impl IndexMut<usize> for TopicOptionFilters {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.0.index_mut(index)
     }
 }
 
@@ -294,6 +334,44 @@ id_header!(SubscribeHeader, SubscribeProperties);
 /// - QoS levels
 /// - Retain handling preferences
 /// - Local message filtering
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
+/// use mqute_codec::protocol::QoS;
+///
+/// let subscribe = Subscribe::new(
+///     1234,
+///     None,
+///     vec![
+///         TopicOptionFilter::new(
+///             "sensors/temperature",
+///             QoS::AtLeastOnce,
+///             false,
+///             true,
+///             RetainHandling::Send
+///         ),
+///         TopicOptionFilter::new(
+///             "control/#",
+///             QoS::ExactlyOnce,
+///             true,
+///             false,
+///             RetainHandling::SendForNewSub
+///         )
+///     ]
+/// );
+///
+/// let filters = subscribe.filters();
+/// assert_eq!(filters[0],
+///            TopicOptionFilter::new(
+///                             "sensors/temperature",
+///                             QoS::AtLeastOnce,
+///                             false,
+///                             true,
+///                             RetainHandling::Send
+///                         ));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Subscribe {
     header: SubscribeHeader,
@@ -302,33 +380,6 @@ pub struct Subscribe {
 
 impl Subscribe {
     /// Creates a new `Subscribe` packet
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Subscribe, TopicOptionFilter, RetainHandling};
-    /// use mqute_codec::protocol::QoS;
-    ///
-    /// let subscribe = Subscribe::new(
-    ///     1234,
-    ///     None,
-    ///     vec![
-    ///         TopicOptionFilter::new(
-    ///             "sensors/temperature",
-    ///             QoS::AtLeastOnce,
-    ///             false,
-    ///             true,
-    ///             RetainHandling::Send
-    ///         ),
-    ///         TopicOptionFilter::new(
-    ///             "control/#",
-    ///             QoS::ExactlyOnce,
-    ///             true,
-    ///             false,
-    ///             RetainHandling::SendForNewSub
-    ///         )
-    ///     ]
-    /// );
-    /// ```
     pub fn new<T: IntoIterator<Item = TopicOptionFilter>>(
         packet_id: u16,
         properties: Option<SubscribeProperties>,

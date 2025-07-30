@@ -1,4 +1,4 @@
-//! # Unsubscribe Acknowledgment (UNSUBACK) Packet - MQTT v5
+//! # Unsubscribe Acknowledgment (UnsubAck) Packet - MQTT v5
 //!
 //! This module implements the MQTT v5 `UnsubAck` packet, which is sent by the server
 //! to acknowledge receipt and processing of an UNSUBSCRIBE packet. The `UnsubAck` packet
@@ -41,6 +41,35 @@ id_header!(UnsubAckHeader, UnsubAckProperties);
 /// - Packet Identifier matching the UNSUBSCRIBE packet
 /// - List of return codes indicating unsubscription results
 /// - Optional properties (v5 only)
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::Codes;
+/// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
+///
+/// // Successful unsubscription
+/// let unsuback = UnsubAck::new(
+///     1234,
+///     None,
+///     vec![ReasonCode::Success, ReasonCode::Success]
+/// );
+///
+/// assert_eq!(unsuback.packet_id(), 1234u16);
+///
+/// // Mixed results unsubscription
+/// let unsuback = UnsubAck::new(
+///     5678,
+///     None,
+///     vec![
+///         ReasonCode::Success,
+///         ReasonCode::NoSubscriptionExisted
+///     ]
+/// );
+///
+/// let codes = Codes::new(vec![ReasonCode::Success, ReasonCode::NoSubscriptionExisted]);
+/// assert_eq!(unsuback.codes(), codes);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UnsubAck {
     header: UnsubAckHeader,
@@ -53,28 +82,6 @@ impl UnsubAck {
     /// # Panics
     /// - If no reason codes are provided
     /// - If any reason code is invalid for `UnsubAck`
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{UnsubAck, ReasonCode};
-    ///
-    /// // Successful unsubscription
-    /// let unsuback = UnsubAck::new(
-    ///     1234,
-    ///     None,
-    ///     vec![ReasonCode::Success, ReasonCode::Success]
-    /// );
-    ///
-    /// // Mixed results unsubscription
-    /// let unsuback_mixed = UnsubAck::new(
-    ///     5678,
-    ///     None,
-    ///     vec![
-    ///         ReasonCode::Success,
-    ///         ReasonCode::NoSubscriptionExisted
-    ///     ]
-    /// );
-    /// ```
     pub fn new<T>(packet_id: u16, properties: Option<UnsubAckProperties>, codes: T) -> Self
     where
         T: IntoIterator<Item = ReasonCode>,
@@ -106,7 +113,7 @@ impl UnsubAck {
     }
 
     /// Returns the list of reason codes
-    pub fn code(&self) -> Codes<ReasonCode> {
+    pub fn codes(&self) -> Codes<ReasonCode> {
         self.codes.clone()
     }
 

@@ -1,4 +1,4 @@
-//! # Publish Received (PUBREC) Packet - MQTT v5
+//! # Publish Received (PubRec) Packet - MQTT v5
 //!
 //! This module implements the MQTT v5 `PubRec` packet, which is the second packet in the
 //! Quality of Service 2 (QoS 2) message delivery flow. The `PubRec` packet is sent by the

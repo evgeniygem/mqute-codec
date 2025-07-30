@@ -24,20 +24,20 @@ pub enum Protocol {
     V5,
 }
 
-impl Into<u8> for Protocol {
+impl From<Protocol> for u8 {
     /// Converts the `Protocol` enum into its corresponding numeric value.
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::Protocol;
     ///
     /// let protocol = Protocol::V5;
     /// let value: u8 = protocol.into();
     /// assert_eq!(value, 0x05);
     /// ```
-    fn into(self) -> u8 {
-        match self {
+    fn from(value: Protocol) -> Self {
+        match value {
             Protocol::V3 => 0x03,
             Protocol::V4 => 0x04,
             Protocol::V5 => 0x05,
@@ -55,7 +55,7 @@ impl TryFrom<u8> for Protocol {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::Protocol;
     /// use mqute_codec::Error;
     ///
@@ -83,7 +83,7 @@ impl Protocol {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::Protocol;
     ///
     /// let protocol = Protocol::V3;

@@ -29,6 +29,18 @@ const WILL_RETAIN: usize = 5;
 ///
 /// These properties provide extended functionality beyond the basic connection
 /// parameters, including session management, flow control, and authentication.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::ConnectProperties;
+///
+/// let connect_properties = ConnectProperties {
+///     session_expiry_interval: Some(3600u32),
+///     maximum_packet_size: Some(4096u32),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ConnectProperties {
     /// Duration in seconds after which the session expires
@@ -89,7 +101,7 @@ impl PropertyFrame for ConnectProperties {
             Property::RequestProblemInformation,
             buf
         );
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
         property_encode!(&self.auth_method, Property::AuthenticationMethod, buf);
         property_encode!(&self.auth_data, Property::AuthenticationData, buf);
     }
@@ -123,7 +135,7 @@ impl PropertyFrame for ConnectProperties {
                 Property::RequestProblemInformation => {
                     property_decode!(&mut properties.request_problem_info, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut properties.user_properties, buf);
                 }
                 Property::AuthenticationMethod => {
@@ -198,6 +210,17 @@ impl ConnectFrame for ConnectHeader<ConnectProperties> {
 ///
 /// These properties provide extended functionality for the last will and testament
 /// message, including delivery timing, content format, and correlation data.
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::WillProperties;
+///
+/// let will_properties = WillProperties {
+///     delay_interval: Some(10u32),
+///     content_type: Some("json".to_string()),
+///     ..Default::default()
+/// };
+/// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct WillProperties {
     /// Delay before sending the Will message after connection loss
@@ -248,7 +271,7 @@ impl PropertyFrame for WillProperties {
         property_encode!(&self.content_type, Property::ContentType, buf);
         property_encode!(&self.response_topic, Property::ResponseTopic, buf);
         property_encode!(&self.correlation_data, Property::CorrelationData, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
     }
 
     /// Decodes Will properties from a byte buffer
@@ -285,7 +308,7 @@ impl PropertyFrame for WillProperties {
                 Property::CorrelationData => {
                     property_decode!(&mut properties.correlation_data, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut properties.user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
@@ -300,6 +323,16 @@ impl PropertyFrame for WillProperties {
 ///
 /// The Will message is published by the broker when the client disconnects
 /// unexpectedly. It includes the message content, delivery options, and properties.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::Will;
+/// use bytes::Bytes;
+/// use mqute_codec::protocol::QoS;
+///
+/// let will = Will::new(None, "tpoic", Bytes::new(), QoS::ExactlyOnce, false);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Will {
     /// Will message properties
@@ -312,6 +345,25 @@ pub struct Will {
     pub qos: QoS,
     /// Whether the Will message should be retained
     pub retain: bool,
+}
+
+impl Will {
+    /// Creates a new `Will` packet
+    pub fn new<T: Into<String>>(
+        properties: Option<WillProperties>,
+        topic: T,
+        payload: Bytes,
+        qos: QoS,
+        retain: bool,
+    ) -> Will {
+        Will {
+            properties,
+            topic: topic.into(),
+            payload,
+            qos,
+            retain,
+        }
+    }
 }
 
 impl WillFrame for Will {
@@ -394,22 +446,6 @@ connect!(Connect<ConnectProperties, Will>, Protocol::V5);
 
 impl Connect {
     /// Creates a new Connect packet with properties
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
-    /// use std::time::Duration;
-    ///
-    /// let connect = Connect::with_properties(
-    ///     "client",
-    ///     None,
-    ///     None,
-    ///     ConnectProperties::default(),
-    ///     Duration::from_secs(30).as_secs() as u16,
-    ///     true,
-    /// );
-    /// ```
     pub fn with_properties<S: Into<String>>(
         client_id: S,
         auth: Option<Credentials>,
@@ -429,27 +465,6 @@ impl Connect {
     }
 
     /// Returns the Connect properties if present
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use bytes::Bytes;
-    /// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
-    ///
-    /// let properties = ConnectProperties {
-    ///     session_expiry_interval: Some(3600),
-    ///     ..Default::default()
-    /// };
-    ///
-    /// let client = Connect::with_properties(
-    ///     "client",
-    ///     None,
-    ///     None,
-    ///     properties.clone(),
-    ///     30,
-    ///     true);
-    /// assert_eq!(client.properties(), Some(properties));
-    /// ```
     pub fn properties(&self) -> Option<ConnectProperties> {
         self.header.properties.clone()
     }

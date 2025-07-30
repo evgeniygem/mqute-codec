@@ -20,6 +20,7 @@ use bytes::{Buf, Bytes, BytesMut};
 /// - User Properties (key-value pairs for extended metadata)
 ///
 /// # Example
+///
 /// ```rust
 /// use mqute_codec::protocol::v5::UnsubscribeProperties;
 ///
@@ -43,7 +44,7 @@ impl PropertyFrame for UnsubscribeProperties {
 
     /// Encodes the properties into a byte buffer
     fn encode(&self, buf: &mut BytesMut) {
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
     }
 
     /// Decodes properties from a byte buffer
@@ -60,7 +61,7 @@ impl PropertyFrame for UnsubscribeProperties {
         while buf.has_remaining() {
             let property: Property = decode_byte(buf)?.try_into()?;
             match property {
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
@@ -81,6 +82,34 @@ id_header!(UnsubscribeHeader, UnsubscribeProperties);
 /// - Packet Identifier (for QoS 1 acknowledgment)
 /// - List of topic filters to unsubscribe from
 /// - Optional properties (v5 only)
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::TopicFilters;
+/// use mqute_codec::protocol::v5::{Unsubscribe, UnsubscribeProperties};
+///
+/// // Simple unsubscribe with no properties
+/// let unsubscribe = Unsubscribe::new(
+///     1234,
+///     None,
+///     vec!["sensors/temperature", "control/#"]
+/// );
+///
+/// assert_eq!(unsubscribe.packet_id(), 1234u16);
+///
+/// // Unsubscribe with properties
+/// let properties = UnsubscribeProperties {
+///     user_properties: vec![("reason".into(), "client_shutdown".into())],
+/// };
+/// let unsubscribe = Unsubscribe::new(
+///     5678,
+///     Some(properties),
+///     vec!["debug/logs"]
+/// );
+///
+/// assert_eq!(unsubscribe.filters(), TopicFilters::new(vec!["debug/logs"]));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Unsubscribe {
     header: UnsubscribeHeader,
@@ -89,28 +118,6 @@ pub struct Unsubscribe {
 
 impl Unsubscribe {
     /// Creates a new `Unsubscribe` packet
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Unsubscribe, UnsubscribeProperties};
-    ///
-    /// // Simple unsubscribe with no properties
-    /// let unsubscribe = Unsubscribe::new(
-    ///     1234,
-    ///     None,
-    ///     vec!["sensors/temperature", "control/#"]
-    /// );
-    ///
-    /// // Unsubscribe with properties
-    /// let properties = UnsubscribeProperties {
-    ///     user_properties: vec![("reason".into(), "client_shutdown".into())],
-    /// };
-    /// let unsubscribe = Unsubscribe::new(
-    ///     5678,
-    ///     Some(properties),
-    ///     vec!["debug/logs"]
-    /// );
-    /// ```
     pub fn new<T: IntoIterator<Item: Into<String>>>(
         packet_id: u16,
         properties: Option<UnsubscribeProperties>,

@@ -7,10 +7,18 @@
 use super::util;
 use crate::protocol::PacketType;
 
-/// Represents an MQTT `PINGREQ` packet.
+/// Represents an MQTT `PingReq` packet.
 ///
 /// The `PingReq` packet is sent by the client to the server to indicate that the connection
 /// is still alive.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::PingReq;
+///
+/// let packet = PingReq { };
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingReq {}
 
@@ -20,9 +28,17 @@ util::header_packet_decode_impl!(PingReq, PacketType::PingReq);
 // Implement the `Encode` trait for `PingReq`.
 util::header_packet_encode_impl!(PingReq, PacketType::PingReq);
 
-/// Represents an MQTT `PINGRESP` packet.
+/// Represents an MQTT `PingResp` packet.
 ///
-/// The `PingResp` packet is sent by the server to the client in response to a `PINGREQ` packet.
+/// The `PingResp` packet is sent by the server to the client in response to a `PingReq` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::PingResp;
+///
+/// let packet = PingResp { };
+/// ```
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PingResp {}
 

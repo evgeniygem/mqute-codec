@@ -56,7 +56,7 @@ impl TryFrom<u8> for PacketType {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::PacketType;
     /// use mqute_codec::Error;
     ///

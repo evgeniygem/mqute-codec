@@ -1,10 +1,23 @@
 macro_rules! ack_properties {
     ($name:ident) => {
+        #[doc = concat!("Represents an MQTT `", stringify!($name), "` packet")]
+        #[doc = ""]
+        #[doc = "Contains optional properties for MQTT v5 acknowledgment packet "]
+        #[doc = "that provide additional metadata about the operation."]
+        #[doc = ""]
+        #[doc = "# Example"]
+        #[doc = "```rust"]
+        #[doc = concat!("use mqute_codec::protocol::v5::", stringify!($name), ";")]
+        #[doc = concat!("let properties = ", stringify!($name), " {")]
+        #[doc = "    reason_string: Some(String::from(\"value\")),"]
+        #[doc = "    user_properties: vec![(String::from(\"key\"), String::from(\"value\"))],"]
+        #[doc = "};"]
+        #[doc = "```"]
         #[derive(Debug, Default, Clone, PartialEq, Eq)]
         pub struct $name {
-            /// Human-readable reason string
+            /// Human-readable description of the acknowledgement
             pub reason_string: Option<String>,
-            /// User-defined key-value properties
+            /// User-defined key-value properties for extended functionality
             pub user_properties: Vec<(String, String)>,
         }
     };
@@ -30,7 +43,7 @@ macro_rules! ack_properties_frame_impl {
                 );
                 $crate::protocol::v5::property::property_encode!(
                     &self.user_properties,
-                    $crate::protocol::v5::property::Property::UserProperty,
+                    $crate::protocol::v5::property::Property::UserProp,
                     buf
                 );
             }
@@ -58,7 +71,7 @@ macro_rules! ack_properties_frame_impl {
                                 buf
                             );
                         }
-                        $crate::protocol::v5::property::Property::UserProperty => {
+                        $crate::protocol::v5::property::Property::UserProp => {
                             $crate::protocol::v5::property::property_decode!(
                                 &mut user_properties,
                                 buf
@@ -202,26 +215,41 @@ macro_rules! ack {
             }
         }
 
+        #[doc = concat!("Represents an MQTT `", stringify!($name), "` packet")]
+        #[doc = ""]
+        #[doc = "# Example"]
+        #[doc = ""]
+        #[doc = "```rust"]
+        #[doc = concat!("use mqute_codec::protocol::v5::{ReasonCode, ", stringify!($name), "};")]
+        #[doc = ""]
+        #[doc = concat!("let packet = ", stringify!($name), "::new(1234, ReasonCode::Success, None);")]
+        #[doc = "assert_eq!(packet.packet_id(), 1234u16);"]
+        #[doc = "assert_eq!(packet.code(), ReasonCode::Success);"]
+        #[doc = "```"]
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $name {
             header: Header,
         }
 
         impl $name {
+            #[doc = concat!("Creates a new `", stringify!($name), "` packet")]
             pub fn new(packet_id: u16, code: ReasonCode, properties: Option<$properties>) -> Self {
                 $name {
                     header: Header::new(packet_id, code, properties),
                 }
             }
 
+            #[doc = concat!("Returns the packet ID of the `", stringify!($name), "` packet")]
             pub fn packet_id(&self) -> u16 {
                 self.header.packet_id
             }
 
+            #[doc = concat!("Returns the reason code of the `", stringify!($name), "` packet")]
             pub fn code(&self) -> $crate::protocol::v5::reason::ReasonCode {
                 self.header.code
             }
 
+            #[doc = concat!("Returns the `", stringify!($name), "` properties if present")]
             pub fn properties(&self) -> Option<$properties> {
                 self.header.properties.clone()
             }

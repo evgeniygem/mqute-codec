@@ -39,7 +39,7 @@ impl TryFrom<u8> for QoS {
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::QoS;
     /// use mqute_codec::Error;
     ///
@@ -59,19 +59,19 @@ impl TryFrom<u8> for QoS {
     }
 }
 
-impl Into<u8> for QoS {
+impl From<QoS> for u8 {
     /// Converts the `QoS` enum into its corresponding numeric value.
     ///
     /// # Examples
     ///
-    /// ```
+    /// ```rust
     /// use mqute_codec::protocol::QoS;
     ///
     /// let qos = QoS::ExactlyOnce;
     /// let value: u8 = qos.into();
     /// assert_eq!(value, 2);
     /// ```
-    fn into(self) -> u8 {
-        self as u8
+    fn from(value: QoS) -> Self {
+        value as u8
     }
 }

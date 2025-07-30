@@ -18,38 +18,77 @@ use crate::Error;
 /// providing a unified interface for packet handling while maintaining
 /// type safety for each specific packet type.
 ///
-/// # Variants
-/// - `Connect`: Client connection request
-/// - `ConnAck`: Connection acknowledgment
-/// - `Publish`: Message publication
-/// - `PubAck`: Publication acknowledgment (QoS 1)
-/// - `PubRec`: Publication received (QoS 2 part 1)
-/// - `PubRel`: Publication release (QoS 2 part 2)
-/// - `PubComp`: Publication complete (QoS 2 part 3)
-/// - `Subscribe`: Subscription request
-/// - `SubAck`: Subscription acknowledgment
-/// - `Unsubscribe`: Unsubscription request
-/// - `UnsubAck`: Unsubscription acknowledgment
-/// - `PingReq`: Keep-alive ping request
-/// - `PingResp`: Keep-alive ping response
-/// - `Disconnect`: Graceful connection termination
-/// - `Auth`: Authentication exchange
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v5::Packet;
+/// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
+/// use bytes::{Bytes, BytesMut};
+///
+/// let properties = ConnectProperties {
+///     session_expiry_interval: Some(3600),
+///     ..Default::default()
+/// };
+///
+/// let connect = Connect::with_properties(
+///     "client",
+///     None,
+///     None,
+///     properties.clone(),
+///     30,
+///     true);
+///
+/// let mut buf = BytesMut::new();
+///
+/// let packet = Packet::Connect(connect);
+///
+/// packet.encode(&mut buf).unwrap()
+/// ```
 #[derive(Debug)]
 pub enum Packet {
+    /// Client-initiated connection request. First packet in connection establishment flow
     Connect(Connect),
+
+    /// Server connection acknowledgment. Sent in response to CONNECT packet
     ConnAck(ConnAck),
+
+    /// Message publication. Primary message delivery mechanism.
     Publish(Publish),
+
+    /// QoS 1 publication acknowledgment. Acknowledges receipt of QoS 1 messages
     PubAck(PubAck),
+
+    /// QoS 2 publication received (part 1). First packet in QoS 2 protocol flow
     PubRec(PubRec),
+
+    /// QoS 2 publication release (part 2). Second packet in QoS 2 protocol flow
     PubRel(PubRel),
+
+    /// QoS 2 publication complete (part 3). Final packet in QoS 2 protocol flow
     PubComp(PubComp),
+
+    /// Subscription request. Begins subscription creation/modification
     Subscribe(Subscribe),
+
+    /// Subscription acknowledgment. Confirms subscription processing results
     SubAck(SubAck),
+
+    /// Unsubscription request. Begins subscription termination
     Unsubscribe(Unsubscribe),
+
+    /// Unsubscription acknowledgment. Confirms unsubscription processing
     UnsubAck(UnsubAck),
+
+    /// Keep-alive ping request. Must be responded to with PINGRESP
     PingReq(PingReq),
+
+    /// Keep-alive ping response. Sent in response to PINGREQ to confirm connection is active
     PingResp(PingResp),
+
+    /// Graceful connection termination. Properly closes the MQTT connection
     Disconnect(Disconnect),
+
+    /// Authentication exchange. Used for extended authentication flows
     Auth(Auth),
 }
 

@@ -90,6 +90,16 @@ const USERNAME: usize = 7;
 /// The `Credentials` struct encapsulates the username and optional password used for authenticating
 /// a client with an MQTT broker. It provides methods for creating, encoding, decoding, and
 /// manipulating authentication data.
+///
+/// # Examples
+///
+/// ```rust
+/// use mqute_codec::protocol::Credentials;
+///
+/// let credentials = Credentials::login("user", "pass");
+/// assert_eq!(credentials.username(), "user");
+/// assert_eq!(credentials.password(), Some("pass".to_string()));
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Credentials {
     /// The username for authentication.
@@ -101,21 +111,6 @@ pub struct Credentials {
 
 impl Credentials {
     /// Creates a new `Credentials` instance.
-    ///
-    /// # Arguments
-    ///
-    /// - `username`: The username for authentication. This can be any type that implements `Into<String>`.
-    /// - `password`: An optional password for authentication.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::Credentials;
-    ///
-    /// let credentials = Credentials::new("user", Some("pass".to_string()));
-    /// assert_eq!(credentials.username(), "user");
-    /// assert_eq!(credentials.password(), Some("pass".to_string()));
-    /// ```
     pub fn new<T>(username: T, password: Option<String>) -> Self
     where
         T: Into<String>,
@@ -127,84 +122,21 @@ impl Credentials {
     }
 
     /// Creates a new `Credentials` instance with only a username.
-    ///
-    /// # Arguments
-    ///
-    /// - `username`: The username for authentication. This can be any type that implements `Into<String>`.
-    ///
-    /// # Returns
-    ///
-    /// A new `Credentials` instance with no password.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::Credentials;
-    ///
-    /// let credentials = Credentials::with_name("user");
-    /// assert_eq!(credentials.username(), "user");
-    /// assert_eq!(credentials.password(), None);
-    /// ```
     pub fn with_name<T: Into<String>>(username: T) -> Self {
         Self::new(username, None)
     }
 
     /// Creates a new `Credentials` instance with both a username and password.
-    ///
-    /// # Arguments
-    ///
-    /// - `username`: The username for authentication. This can be any type that implements `Into<String>`.
-    /// - `password`: The password for authentication. This can be any type that implements `Into<String>`.
-    ///
-    /// # Returns
-    ///
-    /// A new `Credentials` instance with both username and password.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::Credentials;
-    ///
-    /// let credentials = Credentials::login("user", "pass");
-    /// assert_eq!(credentials.username(), "user");
-    /// assert_eq!(credentials.password(), Some("pass".to_string()));
-    /// ```
     pub fn login<T: Into<String>, U: Into<String>>(username: T, password: U) -> Self {
         Self::new(username.into(), Some(password.into()))
     }
 
     /// Returns the username.
-    ///
-    /// # Returns
-    ///
-    /// The username as a `String`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::Credentials;
-    ///
-    /// let credentials = Credentials::with_name("user");
-    /// assert_eq!(credentials.username(), "user");
-    /// ```
     pub fn username(&self) -> String {
         self.username.clone()
     }
 
     /// Returns the optional password.
-    ///
-    /// # Returns
-    ///
-    /// The password as an `Option<String>`.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::Credentials;
-    ///
-    /// let credentials = Credentials::login("user", "pass");
-    /// assert_eq!(credentials.password(), Some("pass".to_string()));
-    /// ```
     pub fn password(&self) -> Option<String> {
         self.password.clone()
     }
@@ -331,6 +263,35 @@ where
 /// the header, payload, and encoding/decoding logic for a specific MQTT protocol version.
 macro_rules! connect {
     ($name:ident <$property:ident, $will:ident>, $proto:expr) => {
+        /// Represents an MQTT `Connect` packet
+        ///
+        /// This packet initiates a connection between client and broker and contains
+        /// all necessary parameters for the session.
+        ///
+        /// # Example
+        ///
+        /// ```rust
+        /// use std::time::Duration;
+        /// use bytes::Bytes;
+        /// use mqute_codec::protocol::{v5, Credentials, Protocol, QoS};
+        ///
+        /// let connect = v5::Connect::new(
+        ///     "client",
+        ///     Some(Credentials::login("user", "pass")),
+        ///     Some(v5::Will::new(
+        ///         None,
+        ///         "device/status",
+        ///         Bytes::from("disconnected"),
+        ///         QoS::ExactlyOnce,
+        ///         true
+        ///     )),
+        ///     Duration::from_secs(30).as_secs() as u16,
+        ///     true
+        /// );
+        /// assert!(connect.will().is_some());
+        /// assert_eq!(connect.protocol(), Protocol::V5);
+        /// assert_eq!(connect.client_id(), "client");
+        /// ```
         #[derive(Debug, Clone, PartialEq, Eq)]
         pub struct $name {
             header: $crate::protocol::common::ConnectHeader<$property>,
@@ -375,6 +336,7 @@ macro_rules! connect {
                 Self { header, payload }
             }
 
+            /// Creates a new Connect packet with basic parameters
             pub fn new<S: Into<String>>(
                 client_id: S,
                 credentials: Option<$crate::protocol::Credentials>,
@@ -392,27 +354,33 @@ macro_rules! connect {
                 )
             }
 
+            /// Returns the protocol version being used
             pub fn protocol(&self) -> $crate::protocol::Protocol {
                 self.header.protocol
             }
 
+            /// Returns the keep alive time in seconds
             pub fn keep_alive(&self) -> u16 {
                 self.header.keep_alive
             }
 
+            /// Returns whether this is a clean session
             pub fn clean_session(&self) -> bool {
                 use bit_field::BitField;
                 self.header.flags.get_bit(CLEAN_SESSION)
             }
 
+            /// Returns the client identifier
             pub fn client_id(&self) -> String {
                 self.payload.client_id.clone()
             }
 
+            /// Returns the authentication credentials if present
             pub fn credentials(&self) -> Option<$crate::protocol::common::Credentials> {
                 self.payload.credentials.clone()
             }
 
+            /// Returns the will message if present
             pub fn will(&self) -> Option<$will> {
                 self.payload.will.clone()
             }

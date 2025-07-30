@@ -1,7 +1,7 @@
-//! # Subscribe Acknowledgment (SUBACK) Packet - MQTT v5
+//! # Subscribe Acknowledgment (SubAck) Packet - MQTT v5
 //!
 //! This module implements the MQTT v5 `SubAck` packet, which is sent by the server
-//! to acknowledge receipt and processing of a SUBSCRIBE packet. The `SubAck` packet
+//! to acknowledge receipt and processing of a `Subscribe` packet. The `SubAck` packet
 //! contains return codes indicating the QoS level granted for each subscription.
 
 use crate::codec::{Decode, Encode, RawPacket};
@@ -45,10 +45,36 @@ id_header!(SubAckHeader, SubAckProperties);
 /// Represents an MQTT v5 `SubAck` packet
 ///
 /// The `SubAck` packet is sent by the server to acknowledge receipt and processing
-/// of a SUBSCRIBE packet. It contains:
-/// - Packet Identifier matching the SUBSCRIBE packet
+/// of a `Subscribe` packet. It contains:
+/// - Packet Identifier matching the `Subscribe` packet
 /// - List of return codes indicating granted QoS levels or errors
 /// - Optional properties (v5 only)
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::Codes;
+/// use mqute_codec::protocol::v5::{SubAck, ReasonCode};
+///
+/// // Successful subscription with different QoS levels
+/// let suback = SubAck::new(
+///     1234,
+///     None,
+///     vec![
+///         ReasonCode::GrantedQos0,
+///         ReasonCode::GrantedQos2,
+///         ReasonCode::GrantedQos1
+///     ],
+/// );
+///
+/// assert_eq!(suback.packet_id(), 1234u16);
+/// let codes = Codes::new(vec![
+///                             ReasonCode::GrantedQos0,
+///                             ReasonCode::GrantedQos2,
+///                             ReasonCode::GrantedQos1
+///                         ]);
+/// assert_eq!(suback.codes(), codes);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SubAck {
     header: SubAckHeader,
@@ -61,33 +87,6 @@ impl SubAck {
     /// # Panics
     /// - If no reason codes are provided
     /// - If any reason code is invalid for `SubAck`
-    ///
-    /// # Example
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{SubAck, ReasonCode};
-    ///
-    /// // Successful subscription with different QoS levels
-    /// let suback = SubAck::new(
-    ///     1234,
-    ///     None,
-    ///     vec![
-    ///         ReasonCode::GrantedQos0,
-    ///         ReasonCode::GrantedQos2,
-    ///         ReasonCode::GrantedQos1
-    ///     ],
-    /// );
-    ///
-    /// // Subscription with errors
-    /// let suback_err = SubAck::new(
-    ///     5678,
-    ///     None,
-    ///     vec![
-    ///         ReasonCode::GrantedQos1,
-    ///         ReasonCode::NotAuthorized,
-    ///         ReasonCode::TopicFilterInvalid
-    ///     ],
-    /// );
-    /// ```
     pub fn new<T>(packet_id: u16, properties: Option<SubAckProperties>, codes: T) -> Self
     where
         T: IntoIterator<Item = ReasonCode>,
@@ -116,7 +115,7 @@ impl SubAck {
     }
 
     /// Returns the list of reason codes
-    pub fn code(&self) -> Codes<ReasonCode> {
+    pub fn codes(&self) -> Codes<ReasonCode> {
         self.codes.clone()
     }
 

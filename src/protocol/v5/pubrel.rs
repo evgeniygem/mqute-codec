@@ -1,8 +1,8 @@
-//! # Publish Release (PUBREL) Packet - MQTT v5
+//! # Publish Release (PubRel) Packet - MQTT v5
 //!
 //! This module implements the MQTT v5 `PubRel` packet, which is the third packet in the
 //! Quality of Service 2 (QoS 2) message delivery flow. The `PubRel` packet is sent by the
-//! publisher in response to a PUBREC to indicate it is releasing the stored message.
+//! publisher in response to a `PubRec` to indicate it is releasing the stored message.
 
 use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::v5::util::{

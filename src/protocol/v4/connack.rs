@@ -13,7 +13,7 @@ use bytes::{BufMut, BytesMut};
 
 /// Represents the return codes for a connection attempt in the MQTT protocol.
 ///
-/// The `ConnectReturnCode` enum is used in the `CONNACK` packet to indicate the result
+/// The `ConnectReturnCode` enum is used in the `ConnAck` packet to indicate the result
 /// of a client's connection request.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(u8)]
@@ -56,14 +56,23 @@ impl TryFrom<u8> for ConnectReturnCode {
     }
 }
 
-impl Into<u8> for ConnectReturnCode {
+impl From<ConnectReturnCode> for u8 {
     /// Converts a `ConnectReturnCode` into a `u8` value.
-    fn into(self) -> u8 {
-        self as u8
+    fn from(value: ConnectReturnCode) -> Self {
+        value as u8
     }
 }
 
-/// Represents an MQTT `CONNACK` packet.
+/// Represents an MQTT `ConnAck` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::{ConnectReturnCode, ConnAck};
+///
+/// let connack = ConnAck::new(ConnectReturnCode::Success, true);
+/// assert_eq!(connack.code(), ConnectReturnCode::Success);
+/// ```
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct ConnAck {
     code: ConnectReturnCode,
@@ -72,14 +81,6 @@ pub struct ConnAck {
 
 impl ConnAck {
     /// Creates a new `ConnAck` packet with the specified return code and session present flag.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{ConnectReturnCode, ConnAck};
-    ///
-    /// let connack = ConnAck::new(ConnectReturnCode::Success, true);
-    /// ```
     pub fn new(code: ConnectReturnCode, session_present: bool) -> Self {
         ConnAck {
             code,
@@ -88,29 +89,11 @@ impl ConnAck {
     }
 
     /// Returns the `ConnectReturnCode` contained in the `ConnAck` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{ConnectReturnCode, ConnAck};
-    ///
-    /// let connack = ConnAck::new(ConnectReturnCode::Success, true);
-    /// assert_eq!(connack.code(), ConnectReturnCode::Success);
-    /// ```
     pub fn code(&self) -> ConnectReturnCode {
         self.code
     }
 
     /// Returns the `session_present` flag from the `ConnAck` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::{ConnectReturnCode, ConnAck};
-    ///
-    /// let connack = ConnAck::new(ConnectReturnCode::Success, true);
-    /// assert_eq!(connack.session_present(), true);
-    /// ```
     pub fn session_present(&self) -> bool {
         self.session_present
     }

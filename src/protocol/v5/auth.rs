@@ -24,6 +24,20 @@ fn validate_auth_reason_code(code: ReasonCode) -> bool {
 }
 
 /// Represents the properties of the `Auth` packet.
+///
+/// # Example
+///
+/// ```rust
+/// use bytes::Bytes;
+/// use mqute_codec::protocol::v5::AuthProperties;
+///
+/// let properties = AuthProperties {
+///     auth_method: Some(String::from("custom")),
+///     auth_data: Some(Bytes::copy_from_slice(b"\x00\xff\x19\xf3\x2a")),
+///     ..Default::default()
+/// };
+///
+/// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct AuthProperties {
     /// The authentication method.
@@ -57,7 +71,7 @@ impl PropertyFrame for AuthProperties {
         property_encode!(&self.auth_method, Property::AuthenticationMethod, buf);
         property_encode!(&self.auth_data, Property::AuthenticationData, buf);
         property_encode!(&self.reason_string, Property::ReasonString, buf);
-        property_encode!(&self.user_properties, Property::UserProperty, buf);
+        property_encode!(&self.user_properties, Property::UserProp, buf);
     }
 
     /// Decodes the `AuthProperties` from a byte buffer.
@@ -80,7 +94,7 @@ impl PropertyFrame for AuthProperties {
                 Property::ReasonString => {
                     property_decode!(&mut properties.reason_string, buf);
                 }
-                Property::UserProperty => {
+                Property::UserProp => {
                     property_decode!(&mut properties.user_properties, buf);
                 }
                 _ => return Err(Error::PropertyMismatch),
@@ -195,6 +209,22 @@ impl AuthHeader {
 /// re-authentication.
 ///
 /// It includes a reason code and optional properties.
+///
+/// # Example
+///
+/// ```rust
+/// use bytes::Bytes;
+/// use mqute_codec::protocol::v5::{Auth, AuthProperties, ReasonCode};
+///
+/// let properties = AuthProperties {
+///     auth_method: Some("method".to_string()),
+///     auth_data: Some(Bytes::from("data")),
+///     reason_string: Some("reason".to_string()),
+///     user_properties: vec![("key".to_string(), "value".to_string())],
+/// };
+/// let auth = Auth::new(ReasonCode::ContinueAuthentication, Some(properties));
+/// assert_eq!(auth.code(), ReasonCode::ContinueAuthentication);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Auth {
     /// The header of the `Auth` packet, including the reason code and optional properties.
@@ -203,22 +233,6 @@ pub struct Auth {
 
 impl Auth {
     /// Creates a new `Auth` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use bytes::Bytes;
-    /// use mqute_codec::protocol::v5::{Auth, AuthProperties, ReasonCode};
-    ///
-    /// let properties = AuthProperties {
-    ///     auth_method: Some("method".to_string()),
-    ///     auth_data: Some(Bytes::from("data")),
-    ///     reason_string: Some("reason".to_string()),
-    ///     user_properties: vec![("key".to_string(), "value".to_string())],
-    /// };
-    /// let auth = Auth::new(ReasonCode::ContinueAuthentication, Some(properties));
-    /// assert_eq!(auth.code(), ReasonCode::ContinueAuthentication);
-    /// ```
     pub fn new(code: ReasonCode, properties: Option<AuthProperties>) -> Self {
         Auth {
             header: AuthHeader::new(code, properties),
@@ -226,36 +240,11 @@ impl Auth {
     }
 
     /// Returns the reason code of the `Auth` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v5::{Auth, ReasonCode};
-    ///
-    /// let auth = Auth::new(ReasonCode::ContinueAuthentication, None);
-    /// assert_eq!(auth.code(), ReasonCode::ContinueAuthentication);
-    /// ```
     pub fn code(&self) -> ReasonCode {
         self.header.code
     }
 
     /// Returns the properties of the `Auth` packet.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use bytes::Bytes;
-    /// use mqute_codec::protocol::v5::{Auth, AuthProperties, ReasonCode};
-    ///
-    /// let properties = AuthProperties {
-    ///     auth_method: Some("method".to_string()),
-    ///     auth_data: Some(Bytes::from("data")),
-    ///     reason_string: Some("reason".to_string()),
-    ///     user_properties: vec![("key".to_string(), "value".to_string())],
-    /// };
-    /// let auth = Auth::new(ReasonCode::ContinueAuthentication, Some(properties.clone()));
-    /// assert_eq!(auth.properties(), Some(properties));
-    /// ```
     pub fn properties(&self) -> Option<AuthProperties> {
         self.header.properties.clone()
     }

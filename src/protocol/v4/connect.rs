@@ -20,6 +20,20 @@ const WILL_RETAIN: usize = 5;
 /// Represents the Last Will and Testament (LWT) feature in MQTT.
 ///
 /// The `Will` struct includes the topic, payload, QoS level, and retain flag for the LWT message.
+///
+/// # Example
+///
+/// ```rust
+/// use mqute_codec::protocol::v4::Will;
+/// use mqute_codec::protocol::QoS;
+/// use bytes::Bytes;
+///
+/// let will = Will::new("topic", Bytes::from("message"), QoS::AtLeastOnce, true);
+/// assert_eq!(will.topic, "topic");
+/// assert_eq!(will.payload, Bytes::from("message"));
+/// assert_eq!(will.qos, QoS::AtLeastOnce);
+/// assert_eq!(will.retain, true);
+/// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Will {
     /// The topic to which the LWT message will be published.
@@ -37,20 +51,6 @@ pub struct Will {
 
 impl Will {
     /// Creates a new `Will` instance.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use mqute_codec::protocol::v4::Will;
-    /// use mqute_codec::protocol::QoS;
-    /// use bytes::Bytes;
-    ///
-    /// let will = Will::new("topic", Bytes::from("message"), QoS::AtLeastOnce, true);
-    /// assert_eq!(will.topic, "topic");
-    /// assert_eq!(will.payload, Bytes::from("message"));
-    /// assert_eq!(will.qos, QoS::AtLeastOnce);
-    /// assert_eq!(will.retain, true);
-    /// ```
     pub fn new<T: Into<String>>(topic: T, payload: Bytes, qos: QoS, retain: bool) -> Self {
         Will {
             topic: topic.into(),
@@ -72,7 +72,7 @@ impl WillFrame for Will {
     /// Updates the connection flags to reflect the `Will` settings.
     fn update_flags(&self, flags: &mut u8) {
         // Update the 'Will' flag
-        flags.set_bit(WILL_FLAG as usize, true);
+        flags.set_bit(WILL_FLAG, true);
 
         // Update 'Qos' flags
         flags.set_bits(WILL_QOS, self.qos as u8);

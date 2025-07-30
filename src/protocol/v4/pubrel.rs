@@ -2,7 +2,7 @@
 //!
 //! This module defines the `PubRel` packet, which is used in the MQTT protocol as part of the
 //! QoS 2 message flow. The `PubRel` packet is sent by the publisher to acknowledge the receipt
-//! of a `PUBREC` packet and to indicate that the message can be released to subscribers.
+//! of a `PubRec` packet and to indicate that the message can be released to subscribers.
 
 use super::util;
 use crate::codec::util::decode_word;

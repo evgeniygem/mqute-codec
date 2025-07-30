@@ -34,10 +34,10 @@ impl TryFrom<u8> for ReturnCode {
     }
 }
 
-impl Into<u8> for ReturnCode {
+impl From<ReturnCode> for u8 {
     /// Converts a `ReturnCode` into a `u8` value.
-    fn into(self) -> u8 {
-        match self {
+    fn from(value: ReturnCode) -> Self {
+        match value {
             ReturnCode::Success(qos) => qos as u8,
             ReturnCode::Failure => 0x80,
         }
@@ -45,7 +45,7 @@ impl Into<u8> for ReturnCode {
 }
 
 // Defines the `SubAck` packet
-suback!(SubAck, ReturnCode);
+suback!(ReturnCode);
 
 #[cfg(test)]
 mod tests {
