@@ -1,7 +1,17 @@
-//! # MQTT Protocol Implementation in Rust
+//! # MQTT Packet Codec
 //!
-//! `mqute-codec` is a complete Rust implementation of the MQTT protocol stack,
-//! supporting all major protocol versions with strict compliance.
+//! This module provides packet construction and serialization/deserialization for MQTT protocol.
+//! It handles the binary representation of MQTT packets but does NOT include:
+//! - Network I/O operations
+//! - Protocol state management
+//! - Session handling
+//! - Quality of Service guarantees
+//!
+//! ## Responsibilities
+//! - Packet structure definitions for all MQTT versions (3.1, 3.1.1, 5.0)
+//! - Encoding packets to wire format
+//! - Decoding packets from wire format
+//! - Basic protocol validation
 //!
 //! ## Supported MQTT Versions
 //!
@@ -23,15 +33,16 @@
 //! - **Validation**: Strict protocol compliance checking
 //! - **Async Ready**: Works seamlessly with async runtimes
 
-/// # Codec Implementation
+/// ## Codec Implementation
 ///
 /// Contains the core encoding/decoding logic for MQTT packets.
 ///
-/// ## Main Components
+/// ### Main Components
 /// - `PacketCodec`: The primary codec for encoding/decoding packets
 /// - `RawPacket`: Intermediate packet representation
 ///
-/// ## Example
+/// ### Example
+///
 /// ```rust
 /// use mqute_codec::codec::{PacketCodec, RawPacket, Encode, Decode, Encoded};
 /// use tokio_util::codec::Decoder;
@@ -51,17 +62,17 @@
 /// ```
 pub mod codec;
 
-/// # Protocol Implementation
+/// ## Protocol Implementation
 ///
 /// Contains all MQTT packet definitions and protocol logic.
 ///
-/// ## Organization
+/// ### Organization
 /// - `v3`: MQTT v3.1 protocol implementation
 /// - `v4`: MQTT v3.1.1 protocol implementation
 /// - `v5`: MQTT v5.0 protocol implementation
 /// - `common`: Shared types between protocol versions
 ///
-/// ## Example: Creating a CONNECT Packet
+/// ### Example: Creating a CONNECT Packet
 /// ```rust
 /// use mqute_codec::protocol::{v5::Connect, Credentials};
 ///
@@ -74,7 +85,7 @@ pub mod codec;
 /// );
 /// ```
 ///
-/// ## Example: Creating a PUBLISH Packet
+/// ### Example: Creating a PUBLISH Packet
 /// ```rust
 /// use mqute_codec::protocol::v4::{Publish};
 /// use mqute_codec::protocol::{Flags, QoS};
@@ -91,11 +102,11 @@ pub mod codec;
 /// ```
 pub mod protocol;
 
-/// # Error Handling
+/// ## Error Handling
 ///
 /// Unified error type for all codec operations.
 ///
-/// ## Example Usage
+/// ### Example
 /// ```rust
 /// use mqute_codec::{Error, codec::PacketCodec};
 /// use tokio_util::codec::Decoder;
