@@ -42,29 +42,38 @@ mqute-codec = "0.1"
 
 ## Usage Examples
 
-### Encoding a Connect Packet
-
 ```rust
-use mqute_codec::protocol::v5::{Connect, ReasonCode};
-use bytes::BytesMut;
+use mqute_codec::protocol::{Credentials, QoS};
+use mqute_codec::protocol::v5::{Connect, Packet, Will};
+use std::time::Duration;
+use bytes::{Bytes, BytesMut};
+use mqute_codec::codec::{PacketCodec, Encode, Decode};
+use tokio_util::codec::{Decoder, Encoder};
 
-let connect = Connect::new("client_id", None, None, 30, true);
-let mut buffer = BytesMut::new();
-connect.encode( & mut buffer).unwrap();
-```
+fn main() {
+    let credentials = Credentials::login("user", "password");
+    let original = Packet::Connect(Connect::new(
+        "client",
+        Some(credentials),
+        Some(Will::new(
+            None,
+            "device/status",
+            Bytes::from("disconnected"),
+            QoS::ExactlyOnce,
+            true
+        )),
+        Duration::from_secs(30).as_secs() as u16,
+        true
+    ));
 
-### Decoding Packets
+    let mut codec = PacketCodec::new(Some(4096), Some(4096));
+    let mut buf = BytesMut::new();
+    original.encode(&mut buf).unwrap();
 
-```rust
-use mqute_codec::codec::{PacketCodec, Decode};
-use bytes::BytesMut;
+    let raw = codec.try_decode(&mut buf).unwrap();
+    let restored = Packet::decode(raw).unwrap();
 
-let mut codec = PacketCodec::new(Some(1024), Some(1024));
-let mut buffer = BytesMut::from(&[0x10, 0x0C, 0x00, 0x04, 0x4D, 0x51, 0x54, 0x54, 0x05, 0x02, 0x00, 0x3C, 0x00, 0x00][..]);
-
-match codec.decode(&mut buffer) {
-    Ok(packet) => println!("Received packet: {:?}", packet),
-    Err(e) => eprintln!("Decoding error: {}", e),
+    assert_eq!(original, restored);
 }
 ```
 
