@@ -60,11 +60,11 @@ use mqute_codec::codec::{PacketCodec, Decode};
 use bytes::BytesMut;
 
 let mut codec = PacketCodec::new(Some(1024), Some(1024));
-let mut buffer = BytesMut::from(& [0x10, 0x0C, 0x00, 0x04, 0x4D, 0x51, 0x54, 0x54, 0x05, 0x02, 0x00, 0x3C, 0x00, 0x00][..]);
+let mut buffer = BytesMut::from(&[0x10, 0x0C, 0x00, 0x04, 0x4D, 0x51, 0x54, 0x54, 0x05, 0x02, 0x00, 0x3C, 0x00, 0x00][..]);
 
-match codec.decode( & mut buffer) {
-Ok(packet) => println ! ("Received packet: {:?}", packet),
-Err(e) => eprintln !("Decoding error: {}", e),
+match codec.decode(&mut buffer) {
+    Ok(packet) => println!("Received packet: {:?}", packet),
+    Err(e) => eprintln!("Decoding error: {}", e),
 }
 ```
 
