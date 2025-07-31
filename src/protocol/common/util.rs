@@ -34,6 +34,7 @@ macro_rules! packet {
         ///
         /// packet.encode(&mut buf).unwrap()
         /// ```
+        #[derive(Debug, Clone, PartialEq, Eq)]
         pub enum $packet {
             /// Client-initiated connection request. First packet in connection establishment flow
             Connect($connect),

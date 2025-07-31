@@ -4,13 +4,13 @@
 //! It serves as the primary interface for decoding and encoding MQTT packets, handling the complete
 //! protocol specification including all control packet types.
 
+use crate::Error;
 use crate::codec::{Decode, Encode, RawPacket};
+use crate::protocol::PacketType;
 use crate::protocol::v5::{
     Auth, ConnAck, Connect, Disconnect, PingReq, PingResp, PubAck, PubComp, PubRec, PubRel,
     Publish, SubAck, Subscribe, UnsubAck, Unsubscribe,
 };
-use crate::protocol::PacketType;
-use crate::Error;
 
 /// Represents all possible MQTT v5 packet types
 ///
@@ -44,7 +44,7 @@ use crate::Error;
 ///
 /// packet.encode(&mut buf).unwrap()
 /// ```
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Packet {
     /// Client-initiated connection request. First packet in connection establishment flow
     Connect(Connect),
