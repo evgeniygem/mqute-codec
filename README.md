@@ -42,6 +42,8 @@ mqute-codec = "0.1"
 
 ## Usage Examples
 
+### Encoding and Decoding a Connect Packet
+
 ```rust
 use mqute_codec::protocol::{Credentials, QoS};
 use mqute_codec::protocol::v5::{Connect, Packet, Will};
@@ -74,6 +76,66 @@ fn main() {
     let restored = Packet::decode(raw).unwrap();
 
     assert_eq!(original, restored);
+}
+```
+
+### Basic MQTT Server Implementation
+
+
+```rust
+use mqute_codec::protocol::v5::Packet;
+use mqute_codec::codec::{PacketCodec, RawPacket};
+
+use tokio::net::TcpListener;
+use tokio_util::codec::Framed;
+use futures::StreamExt;
+
+async fn on_recv(raw: RawPacket) {
+    if let Ok(packet) = Packet::decode(raw) {
+        match packet {
+            Packet::Connect(packet) => unimplemented!(),
+            Packet::ConnAck(packet) => unimplemented!(),
+            Packet::Publish(packet) => unimplemented!(),
+            Packet::PubAck(packet) => unimplemented!(),
+            Packet::PubRec(packet) => unimplemented!(),
+            Packet::PubRel(packet) => unimplemented!(),
+            Packet::PubComp(packet) => unimplemented!(),
+            Packet::Subscribe(packet) => unimplemented!(),
+            Packet::SubAck(packet) => unimplemented!(),
+            Packet::Unsubscribe(packet) => unimplemented!(),
+            Packet::UnsubAck(packet) => unimplemented!(),
+            Packet::PingReq(packet) => unimplemented!(),
+            Packet::PingResp(packet) => unimplemented!(),
+            Packet::Disconnect(packet) => unimplemented!(),
+            Packet::Auth(packet) => unimplemented!(),
+        }
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let listener = TcpListener::bind("127.0.0.1:1883").await?;
+
+    loop {
+        let (socket, _) = listener.accept().await?;
+
+        tokio::spawn(async move {
+            // Create a length-delimited codec
+            let mut framed = Framed::new(socket, PacketCodec::new(Some(4096), None));
+
+            while let Some(frame) = framed.next().await {
+                match frame {
+                    Ok(raw) => {
+                        on_recv(raw).await;
+                    }
+                    Err(e) => {
+                        eprintln!("Error processing frame: {}", e);
+                        break;
+                    }
+                }
+            }
+        });
+    }
 }
 ```
 
