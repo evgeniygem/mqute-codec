@@ -64,7 +64,7 @@ fn main() {
             QoS::ExactlyOnce,
             true
         )),
-        Duration::from_secs(30).as_secs() as u16,
+        Duration::from_secs(30),
         true
     ));
 
@@ -120,7 +120,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (socket, _) = listener.accept().await?;
 
         tokio::spawn(async move {
-            // Create a length-delimited codec
             let mut framed = Framed::new(socket, PacketCodec::new(Some(4096), None));
 
             while let Some(frame) = framed.next().await {
