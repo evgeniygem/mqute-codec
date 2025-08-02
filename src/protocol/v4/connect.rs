@@ -131,6 +131,7 @@ connect!(Connect<Propertyless, Will>, Protocol::V4);
 
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
     use super::*;
     use crate::codec::PacketCodec;
     use crate::codec::*;
@@ -195,7 +196,7 @@ mod tests {
             false,
         ));
 
-        Connect::new("client", auth, will, 16, true)
+        Connect::new("client", auth, will, Duration::from_secs(16), true)
     }
 
     #[test]

@@ -21,6 +21,7 @@ use crate::protocol::v5::{
 /// # Example
 ///
 /// ```rust
+/// use std::time::Duration;
 /// use mqute_codec::protocol::v5::Packet;
 /// use mqute_codec::protocol::v5::{Connect, ConnectProperties};
 /// use bytes::{Bytes, BytesMut};
@@ -35,7 +36,7 @@ use crate::protocol::v5::{
 ///     None,
 ///     None,
 ///     properties.clone(),
-///     30,
+///     Duration::from_secs(30),
 ///     true);
 ///
 /// let mut buf = BytesMut::new();

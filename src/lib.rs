@@ -74,13 +74,14 @@ pub mod codec;
 ///
 /// ### Example: Creating a CONNECT Packet
 /// ```rust
+/// use std::time::Duration;
 /// use mqute_codec::protocol::{v5::Connect, Credentials};
 ///
 /// let connect = Connect::new(
 ///     "client_id",
 ///     Some(Credentials::login("user", "pass")),
 ///     None,
-///     30,  // keep alive
+///     Duration::from_secs(30),  // keep alive
 ///     true // clean session
 /// );
 /// ```

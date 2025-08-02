@@ -19,6 +19,7 @@ macro_rules! packet {
         /// # Example
         ///
         /// ```rust
+        /// use std::time::Duration;
         /// use mqute_codec::protocol::v4::{Packet, Connect};
         /// use bytes::{Bytes, BytesMut};
         ///
@@ -26,7 +27,7 @@ macro_rules! packet {
         ///     "client",
         ///     None,
         ///     None,
-        ///     30,
+        ///     Duration::from_secs(30),
         ///     true);
         ///
         /// let mut buf = BytesMut::new();

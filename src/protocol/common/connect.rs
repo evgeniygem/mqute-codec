@@ -3,6 +3,7 @@
 //! This module provides structures and utilities for handling the MQTT Connect packet,
 //! which is used to initiate a connection between a client and an MQTT broker.
 
+use std::time::Duration;
 use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
 use crate::protocol::common::frame::WillFrame;
 use crate::protocol::Protocol;
@@ -15,7 +16,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 pub(crate) struct ConnectHeader<T> {
     pub protocol: Protocol,
     pub flags: u8,
-    pub keep_alive: u16,
+    pub keep_alive: Duration,
     pub properties: Option<T>,
 }
 
@@ -24,7 +25,7 @@ impl<T> ConnectHeader<T> {
     pub(crate) fn new(
         protocol: Protocol,
         flags: u8,
-        keep_alive: u16,
+        keep_alive: Duration,
         properties: Option<T>,
     ) -> Self {
         ConnectHeader {
@@ -57,7 +58,7 @@ impl<T> ConnectHeader<T> {
         buf.put_u8(self.flags);
 
         // Add the keep alive timeout
-        buf.put_u16(self.keep_alive);
+        buf.put_u16(self.keep_alive.as_secs() as u16);
     }
 
     /// Decodes the primary header fields from the provided buffer.
@@ -76,7 +77,7 @@ impl<T> ConnectHeader<T> {
         Ok(ConnectHeader {
             protocol,
             flags,
-            keep_alive,
+            keep_alive: Duration::from_secs(keep_alive as u64),
             properties: None,
         })
     }
@@ -285,7 +286,7 @@ macro_rules! connect {
         ///         QoS::ExactlyOnce,
         ///         true
         ///     )),
-        ///     Duration::from_secs(30).as_secs() as u16,
+        ///     Duration::from_secs(30),
         ///     true
         /// );
         /// assert!(connect.will().is_some());
@@ -306,11 +307,15 @@ macro_rules! connect {
                 credentials: Option<$crate::protocol::common::Credentials>,
                 will: Option<$will>,
                 properties: Option<$property>,
-                keep_alive: u16,
+                keep_alive: std::time::Duration,
                 clean_session: bool,
             ) -> Self {
                 use bit_field::BitField;
                 use $crate::protocol::common::WillFrame;
+
+                if (keep_alive.as_secs() > u16::MAX as u64) {
+                    panic!("Invalid 'keep alive' value");
+                }
 
                 let mut flags = 0u8;
 
@@ -337,11 +342,15 @@ macro_rules! connect {
             }
 
             /// Creates a new Connect packet with basic parameters
+            ///
+            /// # Panics
+            ///
+            /// Panics if the value of the "keep alive" parameter exceeds 65535
             pub fn new<S: Into<String>>(
                 client_id: S,
                 credentials: Option<$crate::protocol::Credentials>,
                 will: Option<$will>,
-                keep_alive: u16,
+                keep_alive: std::time::Duration,
                 clean_session: bool,
             ) -> Self {
                 Self::from_scratch(
@@ -360,7 +369,7 @@ macro_rules! connect {
             }
 
             /// Returns the keep alive time in seconds
-            pub fn keep_alive(&self) -> u16 {
+            pub fn keep_alive(&self) -> std::time::Duration {
                 self.header.keep_alive
             }
 

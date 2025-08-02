@@ -19,6 +19,7 @@ use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
 use std::ops::RangeInclusive;
+use std::time::Duration;
 
 /// Bit flag positions for Connect packet flags
 const WILL_FLAG: usize = 2;
@@ -446,12 +447,16 @@ connect!(Connect<ConnectProperties, Will>, Protocol::V5);
 
 impl Connect {
     /// Creates a new Connect packet with properties
+    ///
+    /// # Panics
+    ///
+    /// Panics if the value of the "keep alive" parameter exceeds 65535
     pub fn with_properties<S: Into<String>>(
         client_id: S,
         auth: Option<Credentials>,
         will: Option<Will>,
         properties: ConnectProperties,
-        keep_alive: u16,
+        keep_alive: Duration,
         clean_session: bool,
     ) -> Self {
         Self::from_scratch(

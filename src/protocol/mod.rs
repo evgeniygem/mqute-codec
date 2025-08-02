@@ -7,6 +7,7 @@
 //!
 //! ### Working with different protocol versions
 //! ```rust
+//! use std::time::Duration;
 //! use mqute_codec::protocol::{v4, v5, Protocol};
 //! use mqute_codec::protocol::QoS;
 //!
@@ -15,7 +16,7 @@
 //!     "client_id",
 //!     None,
 //!     None,
-//!     30,
+//!     Duration::from_secs(30),
 //!     true
 //! );
 //! assert_eq!(connect_v4.protocol(), Protocol::V4);
@@ -25,7 +26,7 @@
 //!     "client_id",
 //!     None,
 //!     None,
-//!     30,
+//!     Duration::from_secs(30),
 //!     true
 //! );
 //! assert_eq!(connect_v5.protocol(), Protocol::V5);
