@@ -48,3 +48,52 @@ ack_decode_impl!(
 
 // Implements packet encoding for `PubRec`
 ack_encode_impl!(PubRec, PacketType::PubRec, Flags::default());
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::codec::PacketCodec;
+    use crate::codec::{Decode, Encode};
+    use bytes::BytesMut;
+    use tokio_util::codec::Decoder;
+
+    #[test]
+    fn pubrec_decode() {
+        let mut codec = PacketCodec::new(None, None);
+
+        let data = &[
+            (PacketType::PubRec as u8) << 4, // Packet type
+            0x04,                            // Remaining len
+            0x12,                            // Packet ID
+            0x34,                            //
+            0x00,                            // Reason code
+            0x00,                            // Property len
+        ];
+
+        let mut stream = BytesMut::new();
+
+        stream.extend_from_slice(&data[..]);
+
+        let raw_packet = codec.decode(&mut stream).unwrap().unwrap();
+        let packet = PubRec::decode(raw_packet).unwrap();
+
+        assert_eq!(packet, PubRec::new(0x1234, ReasonCode::Success, None));
+    }
+
+    #[test]
+    fn pubrec_encode() {
+        let packet = PubRec::new(0x1234, ReasonCode::Success, None);
+
+        let mut stream = BytesMut::new();
+        packet.encode(&mut stream).unwrap();
+        assert_eq!(
+            stream,
+            vec![
+                (PacketType::PubRec as u8) << 4, // Packet type
+                0x02,                            // Remaining len
+                0x12,                            // Packet ID
+                0x34,                            //
+            ]
+        );
+    }
+}

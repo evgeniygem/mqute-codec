@@ -4,13 +4,14 @@
 //! application messages between clients and servers. The packet supports all three
 //! QoS levels and includes extensive message properties for enhanced functionality.
 
-use super::property::{property_decode, property_encode, property_len, Property, PropertyFrame};
+use super::property::{Property, PropertyFrame, property_decode, property_encode, property_len};
+use crate::Error;
 use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_integer};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{common, FixedHeader, Flags, PacketType, QoS};
-use crate::Error;
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, common};
 use bytes::{Buf, Bytes, BytesMut};
+use std::time::Duration;
 
 /// Represents properties of a `Publish` packet in MQTT v5
 ///
@@ -27,11 +28,12 @@ use bytes::{Buf, Bytes, BytesMut};
 ///
 /// ```rust
 /// use bytes::Bytes;
+/// use std::time::Duration;
 /// use mqute_codec::protocol::v5::PublishProperties;
 ///
 /// let properties = PublishProperties {
 ///     payload_format_indicator: Some(1), // UTF-8 payload
-///     message_expiry_interval: Some(3600), // Expires in 1 hour
+///     message_expiry_interval: Some(Duration::from_secs(3600)), // Expires in 1 hour
 ///     topic_alias: Some(5), // Use topic alias ID 5
 ///     response_topic: Some("response/topic".into()),
 ///     correlation_data: Some(Bytes::from("correlation-id")),
@@ -45,7 +47,7 @@ pub struct PublishProperties {
     /// Indicates payload format (0=bytes, 1=UTF-8)
     pub payload_format_indicator: Option<u8>,
     /// Message lifetime in seconds
-    pub message_expiry_interval: Option<u32>,
+    pub message_expiry_interval: Option<Duration>,
     /// Topic alias for message routing
     pub topic_alias: Option<u16>,
     /// Topic for response messages
@@ -106,7 +108,7 @@ impl PropertyFrame for PublishProperties {
         }
 
         let mut payload_format_indicator: Option<u8> = None;
-        let mut message_expiry_interval: Option<u32> = None;
+        let mut message_expiry_interval: Option<Duration> = None;
         let mut topic_alias: Option<u16> = None;
         let mut response_topic: Option<String> = None;
         let mut correlation_data: Option<Bytes> = None;

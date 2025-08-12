@@ -4,16 +4,17 @@
 //! terminate a connection between client and server. The `Disconnect` packet can include
 //! a reason code and optional properties to provide additional context for the disconnection.
 
+use crate::Error;
 use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_integer};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
 use crate::protocol::v5::property::{
-    property_decode, property_encode, property_len, Property, PropertyFrame,
+    Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::{FixedHeader, PacketType};
-use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use std::time::Duration;
 
 /// Validates reason codes for `Disconnect` packets
 ///
@@ -28,10 +29,24 @@ fn validate_disconnect_reason_code(code: ReasonCode) -> bool {
 }
 
 /// Represents properties of a `Disconnect` packet
+///
+/// # Example
+///
+/// ```rust
+///
+/// use mqute_codec::protocol::v5::DisconnectProperties;
+///
+/// let properties = DisconnectProperties {
+///     reason_string: Some("Reason string".to_string()),
+///     server_reference: Some("backup.example.com".to_string()),
+///     ..Default::default()
+/// };
+///
+/// ```
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct DisconnectProperties {
     /// Duration in seconds until session expires
-    pub session_expiry_interval: Option<u32>,
+    pub session_expiry_interval: Option<Duration>,
     /// Human-readable disconnection reason
     pub reason_string: Option<String>,
     /// User-defined key-value properties
@@ -74,7 +89,7 @@ impl PropertyFrame for DisconnectProperties {
         if buf.is_empty() {
             return Ok(None);
         }
-        let mut session_expiry_interval: Option<u32> = None;
+        let mut session_expiry_interval: Option<Duration> = None;
         let mut reason_string: Option<String> = None;
         let mut user_properties: Vec<(String, String)> = Vec::new();
         let mut server_reference: Option<String> = None;
@@ -196,7 +211,10 @@ impl DisconnectHeader {
     }
 }
 
-/// Represents an MQTT v5 `Disconnect` packet
+/// Represents an MQTT v5 `Disconnect` packet.
+///
+/// The `Disconnect` packet is the final MQTT Control Packet sent from the Client
+/// or the Server. It indicates the reason why the Network Connection is being closed
 ///
 /// # Example
 ///

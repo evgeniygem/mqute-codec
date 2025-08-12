@@ -5,17 +5,17 @@
 //! The Connect packet is the first packet sent by a client to initiate a connection
 //! with an MQTT broker.
 
+use super::property::{Property, PropertyFrame, property_len};
 use super::property::{property_decode, property_decode_non_zero, property_encode};
-use super::property::{property_len, Property, PropertyFrame};
+use crate::Error;
 use crate::codec::util::{
     decode_byte, decode_bytes, decode_string, decode_variable_integer, encode_bytes, encode_string,
     encode_variable_integer,
 };
-use crate::protocol::common::{connect, ConnectHeader};
 use crate::protocol::common::{ConnectFrame, WillFrame};
+use crate::protocol::common::{ConnectHeader, connect};
 use crate::protocol::util::len_bytes;
 use crate::protocol::{Credentials, Protocol, QoS};
-use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
 use std::ops::RangeInclusive;
@@ -35,9 +35,10 @@ const WILL_RETAIN: usize = 5;
 ///
 /// ```rust
 /// use mqute_codec::protocol::v5::ConnectProperties;
+/// use std::time::Duration;
 ///
 /// let connect_properties = ConnectProperties {
-///     session_expiry_interval: Some(3600u32),
+///     session_expiry_interval: Some(Duration::from_secs(3600)),
 ///     maximum_packet_size: Some(4096u32),
 ///     ..Default::default()
 /// };
@@ -45,7 +46,7 @@ const WILL_RETAIN: usize = 5;
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ConnectProperties {
     /// Duration in seconds after which the session expires
-    pub session_expiry_interval: Option<u32>,
+    pub session_expiry_interval: Option<Duration>,
     /// Maximum number of QoS 1 and 2 publishes the client will process
     pub receive_maximum: Option<u16>,
     /// Maximum packet size the client will accept
@@ -214,10 +215,11 @@ impl ConnectFrame for ConnectHeader<ConnectProperties> {
 /// # Example
 ///
 /// ```rust
+/// use std::time::Duration;
 /// use mqute_codec::protocol::v5::WillProperties;
 ///
 /// let will_properties = WillProperties {
-///     delay_interval: Some(10u32),
+///     delay_interval: Some(Duration::from_secs(10)),
 ///     content_type: Some("json".to_string()),
 ///     ..Default::default()
 /// };
@@ -225,11 +227,11 @@ impl ConnectFrame for ConnectHeader<ConnectProperties> {
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct WillProperties {
     /// Delay before sending the Will message after connection loss
-    pub delay_interval: Option<u32>,
+    pub delay_interval: Option<Duration>,
     /// Format of the Will message payload (0=bytes, 1=UTF-8)
     pub payload_format_indicator: Option<u8>,
     /// Lifetime of the Will message in seconds
-    pub message_expiry_interval: Option<u32>,
+    pub message_expiry_interval: Option<Duration>,
     /// Content type descriptor (MIME type)
     pub content_type: Option<String>,
     /// Topic name for the response message

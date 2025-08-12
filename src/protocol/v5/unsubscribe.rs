@@ -4,14 +4,14 @@
 //! request unsubscription from one or more topics. The packet includes the list of
 //! topic filters to unsubscribe from and optional properties.
 
+use crate::Error;
 use crate::codec::util::decode_byte;
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::v5::property::{
-    property_decode, property_encode, property_len, Property, PropertyFrame,
+    Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::util::id_header;
 use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters};
-use crate::Error;
 use bytes::{Buf, Bytes, BytesMut};
 
 /// Properties specific to `Unsubscribe` packets

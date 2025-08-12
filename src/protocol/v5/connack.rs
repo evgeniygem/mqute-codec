@@ -5,16 +5,18 @@
 //! the result of the connection attempt and includes session status and optional properties
 //! for session configuration and server capabilities.
 
+use std::time::Duration;
+
 use super::property::{
-    property_decode, property_decode_non_zero, property_encode, property_len, Property,
-    PropertyFrame,
+    Property, PropertyFrame, property_decode, property_decode_non_zero, property_encode,
+    property_len,
 };
+use crate::Error;
 use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_integer};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
 use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::{FixedHeader, PacketType, QoS};
-use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
@@ -28,9 +30,10 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 /// ```rust
 ///
 /// use mqute_codec::protocol::v5::ConnAckProperties;
+/// use std::time::Duration;
 ///
 /// let connack_properties = ConnAckProperties {
-///     session_expiry_interval: Some(3600u32),
+///     session_expiry_interval: Some(Duration::from_secs(3600)),
 ///     retain_available: Some(true),
 ///     ..Default::default()
 /// };
@@ -38,7 +41,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ConnAckProperties {
     /// Duration in seconds the session will be kept after disconnection
-    pub session_expiry_interval: Option<u32>,
+    pub session_expiry_interval: Option<Duration>,
     /// Maximum number of QoS 1 and 2 messages the server will process concurrently
     pub receive_maximum: Option<u16>,
     /// Maximum QoS level the server supports
@@ -307,9 +310,10 @@ impl ConnAckHeader {
 ///
 /// ```rust
 /// use mqute_codec::protocol::v5::{ConnAck, ConnAckProperties, ReasonCode};
+/// use std::time::Duration;
 ///
 /// let properties = ConnAckProperties {
-///     session_expiry_interval: Some(3600),
+///     session_expiry_interval: Some(Duration::from_secs(3600)),
 ///     receive_maximum: Some(10),
 ///     ..Default::default()
 /// };

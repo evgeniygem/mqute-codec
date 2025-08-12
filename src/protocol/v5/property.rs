@@ -1,10 +1,12 @@
+use std::time::Duration;
+
+use crate::Error;
 use crate::codec::util::{
     decode_byte, decode_bytes, decode_dword, decode_string, decode_variable_integer, decode_word,
     encode_bytes, encode_string, encode_variable_integer,
 };
-use crate::protocol::util::len_bytes;
 use crate::protocol::QoS;
-use crate::Error;
+use crate::protocol::util::len_bytes;
 use bytes::{BufMut, Bytes, BytesMut};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -247,6 +249,45 @@ impl PropertyValue for Option<u16> {
         }
 
         *value = Some(decode_word(buf)?);
+        Ok(())
+    }
+}
+
+impl PropertyValue for Option<Duration> {
+    #[inline]
+    fn property_len(value: &Self) -> usize {
+        match value {
+            None => 0,
+            Some(_) => 1 + 4,
+        }
+    }
+
+    fn encode(value: &Self, property: Property, buf: &mut BytesMut) {
+        match value {
+            None => {}
+            Some(value) => {
+                let secs = value.as_secs();
+
+                // Limit value up to u32::MAX
+                let valid_secs = if secs <= u32::MAX as u64 {
+                    secs as u32
+                } else {
+                    u32::MAX
+                };
+
+                buf.put_u8(property.into());
+                buf.put_u32(valid_secs);
+            }
+        }
+    }
+
+    fn decode(value: &mut Self, buf: &mut Bytes) -> Result<(), Error> {
+        if value.is_some() {
+            return Err(Error::ProtocolError);
+        }
+
+        let secs = decode_dword(buf)? as u64;
+        *value = Some(Duration::from_secs(secs));
         Ok(())
     }
 }

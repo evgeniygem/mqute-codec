@@ -4,15 +4,15 @@
 //! authentication and re-authentication. The `Auth` packet includes a reason code and optional
 //! properties for authentication data, method, and user-defined properties.
 
+use crate::Error;
 use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_integer};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
 use crate::protocol::v5::property::{
-    property_decode, property_encode, property_len, Property, PropertyFrame,
+    Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::{FixedHeader, PacketType};
-use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 /// Validates the reason code for the `Auth` packet.

@@ -4,17 +4,17 @@
 //! request subscription to one or more topics. The packet includes detailed subscription
 //! options and properties for each topic filter.
 
+use crate::Error;
 use crate::codec::util::{
     decode_byte, decode_string, decode_variable_integer, encode_string, encode_variable_integer,
 };
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
 use crate::protocol::v5::property::{
-    property_decode, property_encode, property_len, Property, PropertyFrame,
+    Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::util::id_header;
 use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
-use crate::Error;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 use std::ops::{Index, IndexMut};

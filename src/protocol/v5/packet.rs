@@ -27,7 +27,7 @@ use crate::protocol::v5::{
 /// use bytes::{Bytes, BytesMut};
 ///
 /// let properties = ConnectProperties {
-///     session_expiry_interval: Some(3600),
+///     session_expiry_interval: Some(Duration::from_secs(3600)),
 ///     ..Default::default()
 /// };
 ///
