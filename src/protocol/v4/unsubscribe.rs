@@ -4,10 +4,10 @@
 //! the removal of one or more topic filters from a subscription. The `Unsubscribe` packet
 //! includes a packet ID and a list of topic filters.
 
+use crate::Error;
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters};
-use crate::Error;
 use bytes::{BufMut, BytesMut};
 
 /// Represents an MQTT `Unsubscribe` packet.
@@ -39,7 +39,9 @@ impl Unsubscribe {
     ///
     /// # Panics
     ///
-    /// Panics if `packet_id` is zero.
+    /// Panics if:
+    /// - `packet_id` is zero.
+    /// - The topic filters are invalid according to MQTT topic naming rules.
     pub fn new<T: IntoIterator<Item: Into<String>>>(packet_id: u16, filters: T) -> Self {
         if packet_id == 0 {
             panic!("Packet id is zero");

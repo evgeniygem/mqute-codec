@@ -15,7 +15,7 @@ use crate::codec::util::{
 use crate::protocol::common::{ConnectFrame, WillFrame};
 use crate::protocol::common::{ConnectHeader, connect};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{Credentials, Protocol, QoS};
+use crate::protocol::{Credentials, Protocol, QoS, util};
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
 use std::ops::RangeInclusive;
@@ -322,10 +322,11 @@ impl PropertyFrame for WillProperties {
     }
 }
 
-/// Represents a Will message in MQTT v5.
+/// Represents a Last Will and Testament (LWT) message in MQTT v5.
 ///
-/// The Will message is published by the broker when the client disconnects
-/// unexpectedly. It includes the message content, delivery options, and properties.
+/// The Will message is published by the broker when the client disconnects unexpectedly.
+/// It includes the message content, delivery options, and MQTT v5 properties that provide
+/// additional control over the will message delivery.
 ///
 /// # Example
 ///
@@ -334,7 +335,7 @@ impl PropertyFrame for WillProperties {
 /// use bytes::Bytes;
 /// use mqute_codec::protocol::QoS;
 ///
-/// let will = Will::new(None, "tpoic", Bytes::new(), QoS::ExactlyOnce, false);
+/// let will = Will::new(None, "/topic", Bytes::new(), QoS::ExactlyOnce, false);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Will {
@@ -351,17 +352,27 @@ pub struct Will {
 }
 
 impl Will {
-    /// Creates a new `Will` packet
+    /// Creates a new `Will` instance with the specified parameters.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the topic name is invalid according to MQTT topic naming rules.
     pub fn new<T: Into<String>>(
         properties: Option<WillProperties>,
         topic: T,
         payload: Bytes,
         qos: QoS,
         retain: bool,
-    ) -> Will {
+    ) -> Self {
+        let topic = topic.into();
+
+        if !util::is_valid_topic_name(&topic) {
+            panic!("Invalid topic name: '{}'", topic);
+        }
+
         Will {
             properties,
-            topic: topic.into(),
+            topic,
             payload,
             qos,
             retain,
@@ -432,6 +443,11 @@ impl WillFrame for Will {
         let retain = flags.get_bit(WILL_RETAIN);
 
         let topic = decode_string(buf)?;
+
+        if !util::is_valid_topic_name(&topic) {
+            return Err(Error::InvalidTopicName(topic));
+        }
+
         let payload = decode_bytes(buf)?;
 
         Ok(Some(Will {

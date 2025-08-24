@@ -3,6 +3,9 @@
 //! This module provides complete implementations of MQTT protocol versions 3.1, 3.1.1, and 5.0,
 //! with shared components for packet handling and protocol logic.
 //!
+//! The implementation follows the official MQTT specification for each version and provides
+//! type-safe APIs for building, parsing, and handling MQTT packets.
+//!
 //! ## Examples
 //!
 //! ### Working with different protocol versions
@@ -33,55 +36,84 @@
 //! ```
 
 /// # Common Protocol Components
+///
+/// Shared types and utilities used across all MQTT protocol versions.
+/// Includes connection credentials, payload handling, and frame interfaces.
 mod common;
 
 /// # Packet Header Implementation
+///
+/// Handles fixed header parsing and construction for MQTT packets.
+/// Manages packet type, flags, and remaining length encoding.
 mod header;
 
 /// # Core Packet Types
+///
+/// Defines the fundamental MQTT packet types and their implementations.
+/// Includes packet encoding, decoding, and validation logic.
 mod packet;
 
 /// # Quality of Service Levels
 mod qos;
 
 /// # Protocol Utilities
-pub(crate) mod util;
+///
+/// Contains utility functions for MQTT protocol handling including:
+/// - Topic validation and filtering
+/// - Variable byte integer encoding
+/// - System topic detection
+pub mod util;
 
 /// # Protocol Version Handling
+///
+/// Manages protocol version negotiation and feature detection.
+/// Provides version-specific behavior and compatibility handling.
 mod version;
 
 /// # MQTT v3.1 Implementation
 ///
-/// Complete implementation of the MQTT 3.1 specification.
+/// Complete implementation of the MQTT 3.1 specification (IBM version).
 ///
 /// ## Key Features
-/// - Basic QoS 0-2 support
-/// - Clean session handling
-/// - Will message support
+/// - Basic QoS 0-2 support with acknowledged delivery
+/// - Clean session handling for persistent connections
+/// - Last Will and Testament (LWT) message support
+/// - Basic authentication username/password support
 pub mod v3;
 
 /// # MQTT v3.1.1 Implementation
 ///
-/// Implementation of MQTT 3.1.1 (OASIS Standard).
+/// Implementation of MQTT 3.1.1 (OASIS Standard, most widely deployed version).
 ///
 /// ## Differences from v3.1
-/// - Enhanced error handling
-/// - Improved session management
+/// - Enhanced error handling with specific return codes
+/// - Improved session management with persistent sessions
+/// - Standardized protocol name and version identification
+/// - Clarified specification semantics and edge cases
 pub mod v4;
 
 /// # MQTT v5.0 Implementation
 ///
-/// Complete implementation of MQTT 5.0 with:
-/// - Enhanced authentication
-/// - User properties
-/// - Reason codes
-/// - Shared subscriptions
+/// Complete implementation of MQTT 5.0 with modern features and enhancements.
+///
+/// ## Key Features
+/// - Enhanced authentication and authorization mechanisms
+/// - User properties for extensible metadata
+/// - Reason codes for detailed error reporting
+/// - Shared subscriptions for load balancing
+/// - Message expiry and topic aliasing
+/// - Flow control and quota management
 pub mod v5;
 
-/// Re-export common protocol types
-pub use common::payload::*;
+/// Authentication credentials for MQTT connection
 pub use common::Credentials;
+/// Re-export common protocol types and payload handlers
+pub use common::payload::*;
+/// Packet header types and fixed header implementation
 pub use header::*;
+/// MQTT packet type definitions and identifiers
 pub use packet::PacketType;
+/// Quality of Service level enumeration and functionality
 pub use qos::QoS;
+/// Protocol version handling and negotiation
 pub use version::*;

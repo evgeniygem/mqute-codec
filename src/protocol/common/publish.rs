@@ -1,5 +1,5 @@
 use crate::codec::util::{decode_string, decode_word, encode_string};
-use crate::protocol::QoS;
+use crate::protocol::{util, QoS};
 use crate::Error;
 use bytes::{BufMut, Bytes, BytesMut};
 
@@ -12,8 +12,15 @@ pub(crate) struct PublishHeader {
 
 impl PublishHeader {
     pub(crate) fn new<T: Into<String>>(topic: T, packet_id: u16) -> Self {
+        let topic = topic.into();
+
+        // Validate topic name
+        if !util::is_valid_topic_name(&topic) {
+            panic!("Invalid topic name: '{}'", topic);
+        }
+
         PublishHeader {
-            topic: topic.into(),
+            topic,
             packet_id,
         }
     }
@@ -35,6 +42,10 @@ impl PublishHeader {
 
     pub(crate) fn decode(payload: &mut Bytes, qos: QoS) -> Result<Self, Error> {
         let topic = decode_string(payload)?;
+
+        if !util::is_valid_topic_name(&topic) {
+            return Err(Error::InvalidTopicName(topic));
+        }
 
         let packet_id = match qos {
             QoS::AtMostOnce => 0,

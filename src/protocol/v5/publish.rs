@@ -274,7 +274,10 @@ impl Publish {
     /// Creates a new `Publish` packet
     ///
     /// # Panics
-    /// - If QoS > 0 but packet_id is 0
+    ///
+    /// Panics if:
+    /// - QoS > 0 but packet_id is 0.
+    /// - The topic name is invalid according to MQTT topic naming rules.
     pub fn new<T: Into<String>>(
         topic: T,
         packet_id: u16,

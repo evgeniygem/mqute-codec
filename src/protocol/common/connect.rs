@@ -97,7 +97,7 @@ const USERNAME: usize = 7;
 /// ```rust
 /// use mqute_codec::protocol::Credentials;
 ///
-/// let credentials = Credentials::login("user", "pass");
+/// let credentials = Credentials::full("user", "pass");
 /// assert_eq!(credentials.username(), "user");
 /// assert_eq!(credentials.password(), Some("pass".to_string()));
 /// ```
@@ -128,7 +128,7 @@ impl Credentials {
     }
 
     /// Creates a new `Credentials` instance with both a username and password.
-    pub fn login<T: Into<String>, U: Into<String>>(username: T, password: U) -> Self {
+    pub fn full<T: Into<String>, U: Into<String>>(username: T, password: U) -> Self {
         Self::new(username.into(), Some(password.into()))
     }
 
@@ -278,7 +278,7 @@ macro_rules! connect {
         ///
         /// let connect = v5::Connect::new(
         ///     "client",
-        ///     Some(Credentials::login("user", "pass")),
+        ///     Some(Credentials::full("user", "pass")),
         ///     Some(v5::Will::new(
         ///         None,
         ///         "device/status",

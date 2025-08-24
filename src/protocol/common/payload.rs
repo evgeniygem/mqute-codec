@@ -5,8 +5,9 @@
 //! MQTT protocol data, such as return codes and topic filters, which are essential for
 //! MQTT communication.
 
-use crate::codec::util::{decode_string, encode_string};
 use crate::Error;
+use crate::codec::util::{decode_string, encode_string};
+use crate::protocol::util;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 use std::ops::{Index, IndexMut};
@@ -116,16 +117,19 @@ impl<T> From<Vec<T>> for Codes<T> {
     }
 }
 
-/// The `TopicFilters` provides a structure to handle a collection of MQTT topic filters.
-/// Topic filters are used in MQTT subscriptions and unsubscriptions.
+/// A collection of MQTT topic filters used in subscription and unsubscription operations.
 ///
-/// # Example
+/// Topic filters follow MQTT specification rules:
+/// - May contain wildcards (`+` for single-level, `#` for multi-level)
+/// - Must be valid UTF-8 strings
+/// - Follow specific formatting rules for wildcard placement
 ///
-/// ```rust
+/// # Examples
+///
+/// ```
 /// use mqute_codec::protocol::TopicFilters;
 ///
-/// let filters = TopicFilters::new(vec!["topic1", "topic2"]);
-///
+/// let filters = TopicFilters::new(vec!["sensors/temperature", "sensors/+/humidity"]);
 /// assert_eq!(filters.len(), 2);
 /// ```
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -137,12 +141,21 @@ impl TopicFilters {
     ///
     /// # Panics
     ///
-    /// Panics if the iterator is empty, as at least one topic filter is required.
+    /// Panics if:
+    /// - The iterator is empty (at least one topic filter is required)
+    /// - Any topic filter is invalid according to MQTT specification
     pub fn new<T: IntoIterator<Item: Into<String>>>(filters: T) -> Self {
         let values: Vec<String> = filters.into_iter().map(|x| x.into()).collect();
 
         if values.is_empty() {
             panic!("At least one topic filter is required");
+        }
+
+        // Validate all topic filters
+        for value in &values {
+            if !util::is_valid_topic_filter(&value) {
+                panic!("Invalid topic filter: '{}'", value);
+            }
         }
 
         TopicFilters(values)
@@ -159,6 +172,11 @@ impl TopicFilters {
 
         while payload.has_remaining() {
             let filter = decode_string(payload)?;
+
+            // Validate topic filter
+            if !util::is_valid_topic_filter(&filter) {
+                return Err(Error::InvalidTopicFilter(filter));
+            }
 
             filters.push(filter);
         }

@@ -4,11 +4,11 @@
 //! feature in MQTT. It also implements the `WillFrame` trait for encoding and decoding the `Will`
 //! payload.
 
-use crate::codec::util::{decode_bytes, decode_string, encode_bytes, encode_string};
-use crate::protocol::common::{connect, ConnectHeader};
-use crate::protocol::common::{ConnectFrame, WillFrame};
-use crate::protocol::{Protocol, QoS};
 use crate::Error;
+use crate::codec::util::{decode_bytes, decode_string, encode_bytes, encode_string};
+use crate::protocol::common::{ConnectFrame, WillFrame};
+use crate::protocol::common::{ConnectHeader, connect};
+use crate::protocol::{Protocol, QoS, util};
 use bit_field::BitField;
 use bytes::{Bytes, BytesMut};
 use std::ops::RangeInclusive;
@@ -20,6 +20,7 @@ const WILL_RETAIN: usize = 5;
 /// Represents the Last Will and Testament (LWT) feature in MQTT.
 ///
 /// The `Will` struct includes the topic, payload, QoS level, and retain flag for the LWT message.
+/// This message will be published by the broker if the client disconnects unexpectedly.
 ///
 /// # Example
 ///
@@ -50,10 +51,20 @@ pub struct Will {
 }
 
 impl Will {
-    /// Creates a new `Will` instance.
+    /// Creates a new `Will` instance with the specified parameters.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the topic name is invalid according to MQTT topic naming rules.
     pub fn new<T: Into<String>>(topic: T, payload: Bytes, qos: QoS, retain: bool) -> Self {
+        let topic = topic.into();
+
+        if !util::is_valid_topic_name(&topic) {
+            panic!("Invalid topic name: '{}'", topic);
+        }
+
         Will {
-            topic: topic.into(),
+            topic,
             payload,
             qos,
             retain,
@@ -99,6 +110,10 @@ impl WillFrame for Will {
         let retain = flags.get_bit(WILL_RETAIN);
 
         let topic = decode_string(buf)?;
+        if !util::is_valid_topic_name(&topic) {
+            return Err(Error::InvalidTopicName(topic));
+        }
+
         let message = decode_bytes(buf)?;
         Ok(Some(Will::new(topic, message, qos, retain)))
     }
@@ -131,12 +146,12 @@ connect!(Connect<Propertyless, Will>, Protocol::V4);
 
 #[cfg(test)]
 mod tests {
-    use std::time::Duration;
     use super::*;
     use crate::codec::PacketCodec;
     use crate::codec::*;
     use crate::protocol::*;
     use bytes::{Bytes, BytesMut};
+    use std::time::Duration;
     use tokio_util::codec::Decoder;
 
     fn connect_sample() -> [u8; 43] {
@@ -188,7 +203,7 @@ mod tests {
     }
 
     fn connect_packet() -> Connect {
-        let auth = Some(Credentials::login("user", "pass"));
+        let auth = Some(Credentials::full("user", "pass"));
         let will = Some(Will::new(
             "/abc",
             Bytes::from("bye"),

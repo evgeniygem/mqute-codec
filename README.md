@@ -4,32 +4,47 @@
 [![Documentation](https://docs.rs/mqute-codec/badge.svg)](https://docs.rs/mqute-codec)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-A feature-complete implementation of the MQTT (Message Queuing Telemetry Transport) protocol serialization in Rust,
-supporting versions 3.1, 3.1.1 and 5.0.
+A feature-complete, zero-allocation implementation of MQTT (Message Queuing Telemetry Transport) protocol serialization in Rust, supporting versions 3.1, 3.1.1, and 5.0 with strict protocol compliance and validation.
 
 ## Description
 
-`mqute-codec` is a zero-allocation MQTT packet serialization/deserialization library that provides:
+`mqute-codec` is a high-performance MQTT packet serialization/deserialization library designed for building robust MQTT clients, brokers, and protocol tools. It provides:
 
-- **Packet construction**: Build all MQTT packet types programmatically
-- **Wire format handling**: Convert packets to/from their binary representation
-- **Protocol compliance**: Strict validation of packet structure and fields
-- **Version support**: MQTT 3.1, 3.1.1 and 5.0 packet formats
+- **Complete Packet Handling**: Full support for all MQTT packet types across all protocol versions
+- **Zero-Copy Parsing**: Maximum performance with minimal memory overhead
+- **Protocol Compliance**: Strict validation of packet structure, fields, and protocol rules
+- **Version Support**: MQTT 3.1, 3.1.1, and 5.0 with version-specific features
+- **Async-Ready**: Designed for seamless integration with async runtimes
 
-This is not a full MQTT client/broker implementation - it focuses exclusively on the packet layer, making it ideal for:
+This library focuses exclusively on the packet layer, making it ideal for:
 
-- Building custom MQTT clients/servers
-- Protocol analysis tools
-- Embedded systems requiring minimal overhead
-- Testing and benchmarking implementations
+- Building custom MQTT clients and brokers
+- Protocol analysis and diagnostic tools
+- Embedded systems requiring minimal memory footprint
+- Testing and benchmarking MQTT implementations
+- Educational purposes for understanding MQTT protocol internals
 
 ## Features
 
-- Full support for MQTT 3.1, 3.1.1 and 5.0
-- Zero-copy parsing for maximum performance
-- Strict protocol compliance validation
-- Flexible error handling system
-- Async-ready design
+### Core Features
+- **Full Protocol Support**: MQTT 3.1, 3.1.1, and 5.0 packet formats
+- **Zero-Copy Architecture**: Minimal allocations for maximum performance
+- **Strict Validation**: Comprehensive protocol compliance checking
+- **Flexible Error Handling**: Detailed error types with context information
+- **Async Integration**: Ready for use with tokio and other async runtimes
+
+### MQTT v5 Specific Features
+- **Property Support**: Full implementation of MQTT v5 properties
+- **Enhanced Authentication**: Auth packet and extended authentication flows
+- **Reason Codes**: Detailed error and status reporting
+- **User Properties**: Custom metadata support
+- **Shared Subscriptions**: Load balancing and group messaging
+
+### Performance Features
+- **Zero Allocation Parsing**: For most common packet types
+- **Buffer Reuse**: Efficient memory management
+- **Batch Processing**: Optimized for high-throughput scenarios
+- **Minimal Dependencies**: Lightweight dependency tree
 
 ## Installation
 
@@ -37,7 +52,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mqute-codec = "0.2"
+mqute-codec = "0.3"
 ```
 
 ## Usage Examples
@@ -53,7 +68,7 @@ use mqute_codec::codec::{PacketCodec, Encode, Decode};
 use tokio_util::codec::{Decoder, Encoder};
 
 fn main() {
-    let credentials = Credentials::login("user", "password");
+    let credentials = Credentials::full("user", "password");
     let original = Packet::Connect(Connect::new(
         "client",
         Some(credentials),
@@ -146,7 +161,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 - Unsubscribe/UnsubAck
 - PingReq/PingResp
 - Disconnect
-- Auth (v5 only)
+
+## MQTT v5 Exclusive
+
+- Auth - Enhanced authentication flows
+- Property Support - Full property encoding/decoding
+- Reason Codes - Detailed status reporting
+
+## Performance Characteristics
+
+- Zero Allocation: Most packet types parsed without heap allocations
+- Memory Efficient: Minimal memory footprint
 
 ## Documentation
 

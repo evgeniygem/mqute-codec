@@ -70,7 +70,7 @@ mod tests {
     }
 
     fn connect_packet() -> Connect {
-        let auth = Some(Credentials::login("user", "pass"));
+        let auth = Some(Credentials::full("user", "pass"));
         let will = Some(Will::new(
             "/abc",
             Bytes::from("bye"),

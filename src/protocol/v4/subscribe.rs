@@ -4,10 +4,10 @@
 //! `TopicQosFilters`) used in the MQTT protocol to handle subscription requests. The `Subscribe`
 //! packet contains a list of topic filters and their requested QoS levels.
 
+use crate::Error;
 use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
-use crate::Error;
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, util};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 
@@ -33,12 +33,19 @@ pub struct TopicQosFilter {
 }
 
 impl TopicQosFilter {
-    /// Creates a new `TopicQosFilter` instance.
+    /// Creates a new `TopicQosFilter` instance with the specified topic and QoS level.
+    ///
+    /// # Panics
+    ///
+    /// Panics if the topic filter is invalid according to MQTT specification rules.
     pub fn new<T: Into<String>>(topic: T, qos: QoS) -> Self {
-        Self {
-            topic: topic.into(),
-            qos,
+        let topic = topic.into();
+
+        if !util::is_valid_topic_filter(&topic) {
+            panic!("Invalid topic filter: '{}'", topic);
         }
+
+        Self { topic, qos }
     }
 }
 
@@ -66,7 +73,9 @@ impl TopicQosFilters {
     ///
     /// # Panics
     ///
-    /// Panics if the iterator is empty, as at least one topic filter is required.
+    /// Panics if:
+    /// - The iterator is empty, as at least one topic filter is required.
+    /// - The topic filters are invalid according to MQTT topic naming rules.
     pub fn new<T: IntoIterator<Item = TopicQosFilter>>(filters: T) -> Self {
         let values: Vec<TopicQosFilter> = filters.into_iter().collect();
 
@@ -87,6 +96,11 @@ impl TopicQosFilters {
 
         while payload.has_remaining() {
             let filter = decode_string(payload)?;
+
+            if !util::is_valid_topic_filter(&filter) {
+                return Err(Error::InvalidTopicFilter(filter));
+            }
+
             let flags = decode_byte(payload)?;
 
             // The upper 6 bits of the Requested QoS byte must be zero

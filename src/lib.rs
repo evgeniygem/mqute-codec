@@ -79,7 +79,7 @@ pub mod codec;
 ///
 /// let connect = Connect::new(
 ///     "client_id",
-///     Some(Credentials::login("user", "pass")),
+///     Some(Credentials::full("user", "pass")),
 ///     None,
 ///     Duration::from_secs(30),  // keep alive
 ///     true // clean session

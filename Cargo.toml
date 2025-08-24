@@ -2,7 +2,7 @@
 name = "mqute-codec"
 description = "A full-featured implementation of MQTT protocol serialization in Rust, supporting versions 3.1, 3.1.1 and 5.0."
 readme = "README.md"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 repository = "https://github.com/evgeniygem/mqute-codec"
 keywords = ["iot", "mqtt", "embedded"]

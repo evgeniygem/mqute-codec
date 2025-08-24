@@ -44,7 +44,9 @@ impl Publish {
     ///
     /// # Panics
     ///
-    /// Panics if `packet_id` is zero for QoS > 0.
+    /// Panics if:
+    /// - `packet_id` is zero for QoS > 0.
+    /// - The topic name is invalid according to MQTT topic naming rules.
     pub fn new<T: Into<String>>(topic: T, packet_id: u16, payload: Bytes, flags: Flags) -> Self {
         if flags.qos != QoS::AtMostOnce && packet_id == 0 {
             panic!("Control packets must contain a non-zero packet identifier at QoS > 0");

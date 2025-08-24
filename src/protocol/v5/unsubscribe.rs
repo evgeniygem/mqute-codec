@@ -118,6 +118,10 @@ pub struct Unsubscribe {
 
 impl Unsubscribe {
     /// Creates a new `Unsubscribe` packet
+    ///
+    /// # Panics
+    ///
+    /// Panics if the topic filters are invalid according to MQTT topic naming rules.
     pub fn new<T: IntoIterator<Item: Into<String>>>(
         packet_id: u16,
         properties: Option<UnsubscribeProperties>,

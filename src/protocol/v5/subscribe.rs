@@ -14,7 +14,7 @@ use crate::protocol::v5::property::{
     Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::util::id_header;
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, util};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 use std::ops::{Index, IndexMut};
@@ -157,6 +157,10 @@ pub struct TopicOptionFilter {
 
 impl TopicOptionFilter {
     /// Creates a new topic filter with options
+    ///
+    /// # Panics
+    ///
+    /// Panics if the iterator is empty, as at least one topic filter is required.
     pub fn new<S: Into<String>>(
         topic: S,
         qos: QoS,
@@ -164,8 +168,14 @@ impl TopicOptionFilter {
         retain_as_published: bool,
         retain_handling: RetainHandling,
     ) -> Self {
+        let topic = topic.into();
+
+        if !util::is_valid_topic_filter(&topic) {
+            panic!("Invalid topic filter: '{}'", topic);
+        }
+
         TopicOptionFilter {
-            topic: topic.into(),
+            topic,
             qos,
             no_local,
             retain_as_published,
@@ -197,7 +207,10 @@ impl TopicOptionFilters {
     /// Creates a new collection of topic filters
     ///
     /// # Panics
-    /// If no filters are provided
+    ///
+    /// Panics if:
+    /// - No filters are provided.
+    /// - The topic filters are invalid according to MQTT topic naming rules.
     pub fn new<T: IntoIterator<Item = TopicOptionFilter>>(filters: T) -> Self {
         let values: Vec<TopicOptionFilter> = filters.into_iter().collect();
 
@@ -219,6 +232,11 @@ impl TopicOptionFilters {
 
         while payload.has_remaining() {
             let topic = decode_string(payload)?;
+
+            if !util::is_valid_topic_filter(&topic) {
+                return Err(Error::InvalidTopicFilter(topic));
+            }
+
             let flags = decode_byte(payload)?;
 
             // The upper 2 bits of the requested option byte must be zero
