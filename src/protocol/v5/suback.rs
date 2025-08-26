@@ -8,7 +8,7 @@ use crate::Error;
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::v5::util::{ack_properties, ack_properties_frame_impl, id_header};
-use crate::protocol::{Codes, FixedHeader, PacketType};
+use crate::protocol::{Codes, FixedHeader, PacketType, traits};
 use bytes::{Buf, Bytes, BytesMut};
 
 // Defines properties specific to `SubAck` packets
@@ -169,3 +169,5 @@ impl Decode for SubAck {
         })
     }
 }
+
+impl traits::SubAck for SubAck {}

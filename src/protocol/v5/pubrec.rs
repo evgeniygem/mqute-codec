@@ -8,7 +8,7 @@ use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::v5::util::{
     ack, ack_decode_impl, ack_encode_impl, ack_properties, ack_properties_frame_impl,
 };
-use crate::protocol::{Flags, PacketType};
+use crate::protocol::{Flags, PacketType, traits};
 
 /// Validates reason codes for `PubRec` packets
 ///
@@ -48,6 +48,8 @@ ack_decode_impl!(
 
 // Implements packet encoding for `PubRec`
 ack_encode_impl!(PubRec, PacketType::PubRec, Flags::default());
+
+impl traits::PubRec for PubRec {}
 
 #[cfg(test)]
 mod tests {

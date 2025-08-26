@@ -11,7 +11,7 @@ use crate::protocol::v5::property::{
     Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::util::id_header;
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters, traits};
 use bytes::{Buf, Bytes, BytesMut};
 
 /// Properties specific to `Unsubscribe` packets
@@ -192,3 +192,5 @@ impl Decode for Unsubscribe {
         ))
     }
 }
+
+impl traits::Unsubscribe for Unsubscribe {}

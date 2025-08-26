@@ -3,13 +3,13 @@
 //! This module provides structures and utilities for handling the MQTT Connect packet,
 //! which is used to initiate a connection between a client and an MQTT broker.
 
-use std::time::Duration;
-use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
-use crate::protocol::common::frame::WillFrame;
-use crate::protocol::Protocol;
 use crate::Error;
+use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
+use crate::protocol::Protocol;
+use crate::protocol::common::frame::WillFrame;
 use bit_field::BitField;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use std::time::Duration;
 
 /// Represents the header of the MQTT Connect packet.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -445,6 +445,8 @@ macro_rules! connect {
                 Ok(Self { header, payload })
             }
         }
+
+        impl $crate::protocol::traits::Connect for $name {}
     };
 }
 

@@ -5,7 +5,7 @@
 //! to match it with the corresponding `Publish` packet.
 
 use super::util;
-use crate::protocol::PacketType;
+use crate::protocol::{PacketType, traits};
 
 // Defines the `PubAck` packet for MQTT V4
 util::id_packet!(PubAck);
@@ -15,6 +15,8 @@ util::id_packet_decode_impl!(PubAck, PacketType::PubAck);
 
 // Implement the `Encode` trait for `PubAck`.
 util::id_packet_encode_impl!(PubAck, PacketType::PubAck);
+
+impl traits::PubAck for PubAck {}
 
 #[cfg(test)]
 mod tests {

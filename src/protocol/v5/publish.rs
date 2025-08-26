@@ -9,7 +9,7 @@ use crate::Error;
 use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_integer};
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS, common};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, common, traits};
 use bytes::{Buf, Bytes, BytesMut};
 use std::time::Duration;
 
@@ -359,3 +359,5 @@ impl Encode for Publish {
         self.header.encoded_len(self.flags.qos) + self.payload.len()
     }
 }
+
+impl traits::Publish for Publish {}

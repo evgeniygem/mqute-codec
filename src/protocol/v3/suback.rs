@@ -4,9 +4,9 @@
 //! It uses the `suback!` macro to define the `SubAck` packet structure with support
 //! for Quality of Service (QoS) levels.
 
-use crate::protocol::common::suback;
-use crate::protocol::QoS;
 use crate::Error;
+use crate::protocol::common::suback;
+use crate::protocol::{QoS, traits};
 
 /// Represents the return codes for a `SubAck` packet.
 ///
@@ -51,6 +51,8 @@ impl From<ReturnCode> for u8 {
 }
 
 suback!(ReturnCode);
+
+impl traits::SubAck for SubAck {}
 
 #[cfg(test)]
 mod tests {

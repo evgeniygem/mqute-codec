@@ -54,6 +54,9 @@ mod header;
 mod packet;
 
 /// # Quality of Service Levels
+///
+/// Implements MQTT Quality of Service (QoS) levels with full specification
+/// compliance.
 mod qos;
 
 /// # Protocol Utilities
@@ -104,6 +107,12 @@ pub mod v4;
 /// - Message expiry and topic aliasing
 /// - Flow control and quota management
 pub mod v5;
+
+/// # Auxiliary Packet Traits
+///
+/// Provides generic traits for MQTT packet functionality across protocol versions.
+/// These auxiliary traits enable version-agnostic code while maintaining type safety.
+pub mod traits;
 
 /// Authentication credentials for MQTT connection
 pub use common::Credentials;

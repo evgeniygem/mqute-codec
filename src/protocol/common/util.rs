@@ -171,6 +171,90 @@ macro_rules! packet {
                 }
             }
         }
+
+        impl From<$connect> for $packet {
+            fn from(value: $connect) -> Self {
+                Self::Connect(value)
+            }
+        }
+
+        impl From<$connack> for $packet {
+            fn from(value: $connack) -> Self {
+                Self::ConnAck(value)
+            }
+        }
+
+        impl From<$publish> for $packet {
+            fn from(value: $publish) -> Self {
+                Self::Publish(value)
+            }
+        }
+
+        impl From<$puback> for $packet {
+            fn from(value: $puback) -> Self {
+                Self::PubAck(value)
+            }
+        }
+
+        impl From<$pubrec> for $packet {
+            fn from(value: $pubrec) -> Self {
+                Self::PubRec(value)
+            }
+        }
+
+        impl From<$pubrel> for $packet {
+            fn from(value: $pubrel) -> Self {
+                Self::PubRel(value)
+            }
+        }
+
+        impl From<$pubcomp> for $packet {
+            fn from(value: $pubcomp) -> Self {
+                Self::PubComp(value)
+            }
+        }
+
+        impl From<$subscribe> for $packet {
+            fn from(value: $subscribe) -> Self {
+                Self::Subscribe(value)
+            }
+        }
+
+        impl From<$suback> for $packet {
+            fn from(value: $suback) -> Self {
+                Self::SubAck(value)
+            }
+        }
+
+        impl From<$unsubscribe> for $packet {
+            fn from(value: $unsubscribe) -> Self {
+                Self::Unsubscribe(value)
+            }
+        }
+
+        impl From<$unsuback> for $packet {
+            fn from(value: $unsuback) -> Self {
+                Self::UnsubAck(value)
+            }
+        }
+
+        impl From<$pingreq> for $packet {
+            fn from(value: $pingreq) -> Self {
+                Self::PingReq(value)
+            }
+        }
+
+        impl From<$pingresp> for $packet {
+            fn from(value: $pingresp) -> Self {
+                Self::PingResp(value)
+            }
+        }
+
+        impl From<$disconnect> for $packet {
+            fn from(value: $disconnect) -> Self {
+                Self::Disconnect(value)
+            }
+        }
     };
 }
 

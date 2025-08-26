@@ -161,3 +161,93 @@ impl Packet {
         }
     }
 }
+
+impl From<Connect> for Packet {
+    fn from(value: Connect) -> Self {
+        Self::Connect(value)
+    }
+}
+
+impl From<ConnAck> for Packet {
+    fn from(value: ConnAck) -> Self {
+        Self::ConnAck(value)
+    }
+}
+
+impl From<Publish> for Packet {
+    fn from(value: Publish) -> Self {
+        Self::Publish(value)
+    }
+}
+
+impl From<PubAck> for Packet {
+    fn from(value: PubAck) -> Self {
+        Self::PubAck(value)
+    }
+}
+
+impl From<PubRec> for Packet {
+    fn from(value: PubRec) -> Self {
+        Self::PubRec(value)
+    }
+}
+
+impl From<PubRel> for Packet {
+    fn from(value: PubRel) -> Self {
+        Self::PubRel(value)
+    }
+}
+
+impl From<PubComp> for Packet {
+    fn from(value: PubComp) -> Self {
+        Self::PubComp(value)
+    }
+}
+
+impl From<Subscribe> for Packet {
+    fn from(value: Subscribe) -> Self {
+        Self::Subscribe(value)
+    }
+}
+
+impl From<SubAck> for Packet {
+    fn from(value: SubAck) -> Self {
+        Self::SubAck(value)
+    }
+}
+
+impl From<Unsubscribe> for Packet {
+    fn from(value: Unsubscribe) -> Self {
+        Self::Unsubscribe(value)
+    }
+}
+
+impl From<UnsubAck> for Packet {
+    fn from(value: UnsubAck) -> Self {
+        Self::UnsubAck(value)
+    }
+}
+
+impl From<PingReq> for Packet {
+    fn from(value: PingReq) -> Self {
+        Self::PingReq(value)
+    }
+}
+
+impl From<PingResp> for Packet {
+    fn from(value: PingResp) -> Self {
+        Self::PingResp(value)
+    }
+}
+
+impl From<Disconnect> for Packet {
+    fn from(value: Disconnect) -> Self {
+        Self::Disconnect(value)
+    }
+}
+
+impl From<Auth> for Packet {
+    fn from(value: Auth) -> Self {
+        Self::Auth(value)
+    }
+}

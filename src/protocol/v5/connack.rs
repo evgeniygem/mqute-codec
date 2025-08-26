@@ -16,7 +16,7 @@ use crate::codec::util::{decode_byte, decode_variable_integer, encode_variable_i
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::util::len_bytes;
 use crate::protocol::v5::reason::ReasonCode;
-use crate::protocol::{FixedHeader, PacketType, QoS};
+use crate::protocol::{FixedHeader, PacketType, QoS, traits};
 use bit_field::BitField;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
@@ -385,3 +385,5 @@ impl Decode for ConnAck {
         Ok(ConnAck { header })
     }
 }
+
+impl traits::ConnAck for ConnAck {}

@@ -14,7 +14,7 @@ use crate::protocol::v5::property::{
     Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::util::id_header;
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS, util};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, traits, util};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 use std::ops::{Index, IndexMut};
@@ -463,3 +463,5 @@ impl Decode for Subscribe {
         Ok(Subscribe::new(header.packet_id, header.properties, filters))
     }
 }
+
+impl traits::Subscribe for Subscribe {}

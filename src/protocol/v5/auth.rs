@@ -12,7 +12,7 @@ use crate::protocol::v5::property::{
     Property, PropertyFrame, property_decode, property_encode, property_len,
 };
 use crate::protocol::v5::reason::ReasonCode;
-use crate::protocol::{FixedHeader, PacketType};
+use crate::protocol::{FixedHeader, PacketType, traits};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 /// Validates the reason code for the `Auth` packet.
@@ -276,3 +276,5 @@ impl Decode for Auth {
         Ok(Auth { header })
     }
 }
+
+impl traits::Auth for Auth {}

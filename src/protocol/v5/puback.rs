@@ -9,7 +9,7 @@ use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::v5::util::{
     ack, ack_decode_impl, ack_encode_impl, ack_properties, ack_properties_frame_impl,
 };
-use crate::protocol::{Flags, PacketType};
+use crate::protocol::{Flags, PacketType, traits};
 
 /// Validates that a reason code is acceptable for a `PubAck` packet.
 ///
@@ -49,3 +49,5 @@ ack_encode_impl!(PubAck, PacketType::PubAck, Flags::default());
 
 // Implement property frame handling for PubAckProperties
 ack_properties_frame_impl!(PubAckProperties);
+
+impl traits::PubAck for PubAck {}

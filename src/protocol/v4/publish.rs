@@ -4,10 +4,10 @@
 //! messages from a client to a server or from a server to a client. The `Publish` packet
 //! includes a topic, payload, and flags for QoS, retain, and duplicate delivery.
 
+use crate::Error;
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::common::PublishHeader;
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
-use crate::Error;
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, traits};
 use bytes::{Bytes, BytesMut};
 
 /// Represents an MQTT `Publish` packet.
@@ -128,6 +128,8 @@ impl Encode for Publish {
         self.header.encoded_len(self.flags.qos) + self.payload.len()
     }
 }
+
+impl traits::Publish for Publish {}
 
 #[cfg(test)]
 mod tests {

@@ -5,7 +5,7 @@
 //! with the corresponding `PubRel` packet.
 
 use super::util;
-use crate::protocol::PacketType;
+use crate::protocol::{PacketType, traits};
 
 // Defines the `PubComp` packet for MQTT V4
 util::id_packet!(PubComp);
@@ -15,6 +15,8 @@ util::id_packet_decode_impl!(PubComp, PacketType::PubComp);
 
 // Implement the `Encode` trait for `PubComp`.
 util::id_packet_encode_impl!(PubComp, PacketType::PubComp);
+
+impl traits::PubComp for PubComp {}
 
 #[cfg(test)]
 mod tests {

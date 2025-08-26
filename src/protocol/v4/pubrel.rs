@@ -5,10 +5,10 @@
 //! of a `PubRec` packet and to indicate that the message can be released to subscribers.
 
 use super::util;
+use crate::Error;
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS};
-use crate::Error;
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, traits};
 use bytes::BufMut;
 
 // Defines the `PubRel` packet for MQTT V4
@@ -46,6 +46,8 @@ impl Decode for PubRel {
         Ok(PubRel::new(packet_id))
     }
 }
+
+impl traits::PubRel for PubRel {}
 
 #[cfg(test)]
 mod tests {

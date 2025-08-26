@@ -7,7 +7,7 @@
 use crate::Error;
 use crate::codec::util::decode_word;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, TopicFilters, traits};
 use bytes::{BufMut, BytesMut};
 
 /// Represents an MQTT `Unsubscribe` packet.
@@ -100,6 +100,8 @@ impl Encode for Unsubscribe {
         2 + self.filters.encoded_len()
     }
 }
+
+impl traits::Unsubscribe for Unsubscribe {}
 
 #[cfg(test)]
 mod tests {

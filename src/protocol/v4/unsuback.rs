@@ -5,7 +5,7 @@
 //! with the corresponding `UNSUBSCRIBE` packet.
 
 use super::util;
-use crate::protocol::PacketType;
+use crate::protocol::{PacketType, traits};
 
 // Defines the `UnsubAck` packet for MQTT V4
 util::id_packet!(UnsubAck);
@@ -15,6 +15,8 @@ util::id_packet_decode_impl!(UnsubAck, PacketType::UnsubAck);
 
 // Implement the `Encode` trait for `UnsubAck`.
 util::id_packet_encode_impl!(UnsubAck, PacketType::UnsubAck);
+
+impl traits::UnsubAck for UnsubAck {}
 
 #[cfg(test)]
 mod tests {

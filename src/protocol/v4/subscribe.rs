@@ -7,7 +7,7 @@
 use crate::Error;
 use crate::codec::util::{decode_byte, decode_string, decode_word, encode_string};
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, Flags, PacketType, QoS, util};
+use crate::protocol::{FixedHeader, Flags, PacketType, QoS, traits, util};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use std::borrow::Borrow;
 
@@ -260,6 +260,8 @@ impl Encode for Subscribe {
         2 + self.filters.encoded_len()
     }
 }
+
+impl traits::Subscribe for Subscribe {}
 
 #[cfg(test)]
 mod tests {

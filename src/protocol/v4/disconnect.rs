@@ -5,7 +5,7 @@
 //! payload and is represented by a simple struct.
 
 use super::util;
-use crate::protocol::PacketType;
+use crate::protocol::{PacketType, traits};
 
 /// Represents an MQTT `Disconnect` packet.
 ///
@@ -24,6 +24,8 @@ util::header_packet_decode_impl!(Disconnect, PacketType::Disconnect);
 
 // Implement the `Encode` trait for `Disconnect`.
 util::header_packet_encode_impl!(Disconnect, PacketType::Disconnect);
+
+impl traits::Disconnect for Disconnect {}
 
 #[cfg(test)]
 mod tests {

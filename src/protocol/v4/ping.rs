@@ -5,7 +5,7 @@
 //! represented by simple structs.
 
 use super::util;
-use crate::protocol::PacketType;
+use crate::protocol::{PacketType, traits};
 
 /// Represents an MQTT `PingReq` packet.
 ///
@@ -28,6 +28,8 @@ util::header_packet_decode_impl!(PingReq, PacketType::PingReq);
 // Implement the `Encode` trait for `PingReq`.
 util::header_packet_encode_impl!(PingReq, PacketType::PingReq);
 
+impl traits::PingReq for PingReq {}
+
 /// Represents an MQTT `PingResp` packet.
 ///
 /// The `PingResp` packet is sent by the server to the client in response to a `PingReq` packet.
@@ -47,6 +49,8 @@ util::header_packet_decode_impl!(PingResp, PacketType::PingResp);
 
 // Implement the `Encode` trait for `PingResp`.
 util::header_packet_encode_impl!(PingResp, PacketType::PingResp);
+
+impl traits::PingResp for PingResp {}
 
 #[cfg(test)]
 mod tests {

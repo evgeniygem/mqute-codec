@@ -8,7 +8,7 @@ use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::v5::util::{
     ack, ack_decode_impl, ack_encode_impl, ack_properties, ack_properties_frame_impl,
 };
-use crate::protocol::{Flags, PacketType};
+use crate::protocol::{Flags, PacketType, traits};
 
 /// Validates that a reason code is appropriate for a `PubComp` packet
 ///
@@ -38,3 +38,5 @@ ack_decode_impl!(
 
 // Implement encoding for `PubComp` packets
 ack_encode_impl!(PubComp, PacketType::PubComp, Flags::default());
+
+impl traits::PubComp for PubComp {}

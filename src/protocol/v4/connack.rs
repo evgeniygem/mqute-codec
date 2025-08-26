@@ -4,10 +4,10 @@
 //! in the MQTT protocol to represent the result of a connection request and the corresponding
 //! acknowledgment packet.
 
+use crate::Error;
 use crate::codec::util::decode_byte;
 use crate::codec::{Decode, Encode, RawPacket};
-use crate::protocol::{FixedHeader, PacketType};
-use crate::Error;
+use crate::protocol::{FixedHeader, PacketType, traits};
 use bit_field::BitField;
 use bytes::{BufMut, BytesMut};
 
@@ -141,6 +141,8 @@ impl Encode for ConnAck {
         2
     }
 }
+
+impl traits::ConnAck for ConnAck {}
 
 #[cfg(test)]
 mod tests {

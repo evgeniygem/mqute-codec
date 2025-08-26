@@ -8,7 +8,7 @@ use crate::protocol::v5::reason::ReasonCode;
 use crate::protocol::v5::util::{
     ack, ack_decode_impl, ack_encode_impl, ack_properties, ack_properties_frame_impl,
 };
-use crate::protocol::{Flags, PacketType, QoS};
+use crate::protocol::{Flags, PacketType, QoS, traits};
 
 /// Validates reason codes for `PubRel` packets
 ///
@@ -38,3 +38,5 @@ ack_decode_impl!(
 
 // Implements packet encoding for `PubRel`
 ack_encode_impl!(PubRel, PacketType::PubRel, Flags::new(QoS::AtLeastOnce));
+
+impl traits::PubRel for PubRel {}

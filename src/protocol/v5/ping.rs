@@ -16,7 +16,7 @@
 //! fixed header.
 
 use super::util;
-use crate::protocol::PacketType;
+use crate::protocol::{PacketType, traits};
 
 /// Represents an MQTT PingReq (Ping Request) packet.
 ///
@@ -34,6 +34,8 @@ pub struct PingReq {}
 util::ping_packet_decode_impl!(PingReq, PacketType::PingReq);
 util::ping_packet_encode_impl!(PingReq, PacketType::PingReq);
 
+impl traits::PingReq for PingReq {}
+
 /// Represents an MQTT PingResp (Ping Response) packet.
 ///
 /// # Example
@@ -49,6 +51,8 @@ pub struct PingResp {}
 // Implements encoding/decoding using ping packet macros
 util::ping_packet_decode_impl!(PingResp, PacketType::PingResp);
 util::ping_packet_encode_impl!(PingResp, PacketType::PingResp);
+
+impl traits::PingResp for PingResp {}
 
 #[cfg(test)]
 mod tests {

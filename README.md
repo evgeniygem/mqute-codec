@@ -52,7 +52,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-mqute-codec = "0.3"
+mqute-codec = "0.4"
 ```
 
 ## Usage Examples

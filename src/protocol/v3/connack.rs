@@ -4,11 +4,11 @@
 //! a connection request from a client. The `ConnAck` packet contains a `ConnectReturnCode` that
 //! indicates the result of the connection attempt.
 
+use crate::Error;
 use crate::codec::util::decode_byte;
 use crate::codec::{Decode, Encode, RawPacket};
 use crate::protocol::v4::ConnectReturnCode;
-use crate::protocol::{FixedHeader, PacketType};
-use crate::Error;
+use crate::protocol::{FixedHeader, PacketType, traits};
 use bytes::{Buf, BufMut, BytesMut};
 
 /// Represents an MQTT `ConnAck` packet.
@@ -78,6 +78,8 @@ impl Encode for ConnAck {
         2
     }
 }
+
+impl traits::ConnAck for ConnAck {}
 
 #[cfg(test)]
 mod tests {
