@@ -85,9 +85,11 @@ pub(crate) fn decode_variable_integer(buf: &[u8]) -> Result<u32, Error> {
     let mut value = 0u32;
     let mut done = false;
     let mut shift = 0;
+    let mut consumed = 0usize;
 
     for &byte in buf {
         value += (byte as u32 & 0x7F) << shift;
+        consumed += 1;
 
         // stop when continue bit is 0
         done = (byte & 0x80) == 0;
@@ -105,6 +107,15 @@ pub(crate) fn decode_variable_integer(buf: &[u8]) -> Result<u32, Error> {
     // Not enough bytes to decode variable byte integer
     if !done {
         return Err(Error::NotEnoughBytes(1));
+    }
+
+    // The MQTT spec requires the Variable Byte Integer to be encoded using the
+    // minimum number of bytes necessary. Callers rely on `len_bytes(value)` to
+    // know how many bytes this integer occupied on the wire (e.g. to skip past
+    // it), so an overlong/non-canonical encoding here would desynchronize the
+    // rest of the parser. Reject it explicitly instead.
+    if consumed != crate::protocol::util::len_bytes(value as usize) {
+        return Err(Error::MalformedVariableByteInteger);
     }
 
     Ok(value)
