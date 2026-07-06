@@ -151,6 +151,15 @@ impl FixedHeader {
     pub fn try_from(control_byte: u8, remaining_len: usize) -> Result<Self, Error> {
         let _: PacketType = fetch_packet_type(control_byte).try_into()?;
 
+        // Bits 2-1 of the control byte are interpreted as a QoS value by
+        // `flags()`. The value 0b11 (3) is reserved by the MQTT spec and must
+        // never appear on the wire. Reject it here so that `flags()` never
+        // has to deal with an invalid QoS later on.
+        let qos_bits = (control_byte >> 1) & 0x03;
+        if qos_bits == 0x03 {
+            return Err(Error::InvalidQos(qos_bits));
+        }
+
         Ok(FixedHeader {
             control_byte,
             remaining_len,
@@ -206,7 +215,11 @@ impl FixedHeader {
     pub fn flags(&self) -> Flags {
         let flags = self.control_byte & 0x0F;
         let dup: bool = (flags & 0x08) != 0;
-        let qos = ((flags >> 1) & 0x03).try_into().unwrap();
+        // Safe: `try_from`/`new`/`with_flags` guarantee the QoS bits are
+        // never the reserved value 3, so this conversion cannot fail.
+        let qos = ((flags >> 1) & 0x03)
+            .try_into()
+            .expect("QoS bits are validated when the FixedHeader is constructed");
         let retain = flags & 0x01 != 0;
 
         Flags { dup, qos, retain }
