@@ -140,12 +140,14 @@ pub fn is_valid_topic_filter<T: AsRef<str>>(filter: T) -> bool {
             return false;
         }
 
-        // Multi-level wildcard must be preceded by separator or be alone
-        if filter.len() > 1 {
-            let preceding_char = filter.chars().nth(pos - 1).unwrap();
-            if preceding_char != '/' {
-                return false;
-            }
+        // Multi-level wildcard must be preceded by separator or be alone.
+        // `pos` is a *byte* offset (from `str::find`), so the preceding byte
+        // is checked directly instead of going through `chars().nth(...)`,
+        // which indexes by *character* and would both mis-check and panic
+        // (out-of-bounds) whenever the filter contains multi-byte UTF-8
+        // characters before the '#'.
+        if filter.len() > 1 && filter.as_bytes()[pos - 1] != b'/' {
+            return false;
         }
 
         // Check if # appears anywhere else
