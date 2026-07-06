@@ -7,7 +7,7 @@ use crate::codec::util::{
 };
 use crate::protocol::QoS;
 use crate::protocol::util::len_bytes;
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) enum Property {
@@ -152,7 +152,7 @@ impl PropertyValue for Option<bool> {
         }
 
         let byte = decode_byte(buf)?;
-        if byte != 0 || byte != 1 {
+        if byte != 0 && byte != 1 {
             return Err(Error::ProtocolError);
         }
 
@@ -215,7 +215,7 @@ impl PropertyValue for Option<QoS> {
         }
 
         let byte = decode_byte(buf)?;
-        if byte != 0 || byte != 1 {
+        if byte != 0 && byte != 1 {
             return Err(Error::ProtocolError);
         }
 
@@ -419,7 +419,10 @@ impl PropertyValue for Vec<u32> {
     }
 
     fn decode(value: &mut Self, buf: &mut Bytes) -> Result<(), Error> {
-        let len = decode_variable_integer(buf)? as u32;
+        let len = decode_variable_integer(buf)?;
+        // `decode_variable_integer` only inspects the bytes, it doesn't
+        // consume them, so the buffer must be advanced manually.
+        buf.advance(len_bytes(len as usize));
         value.push(len);
         Ok(())
     }
