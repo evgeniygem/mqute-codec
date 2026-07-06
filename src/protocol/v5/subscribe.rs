@@ -85,7 +85,9 @@ impl PropertyFrame for SubscribeProperties {
                     if subscription_id.is_some() {
                         return Err(Error::ProtocolError);
                     }
-                    subscription_id = Some(decode_variable_integer(buf)? as u32);
+                    let value = decode_variable_integer(buf)?;
+                    buf.advance(len_bytes(value as usize));
+                    subscription_id = Some(value);
                 }
                 Property::UserProp => {
                     property_decode!(&mut user_properties, buf);

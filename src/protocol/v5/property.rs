@@ -420,8 +420,6 @@ impl PropertyValue for Vec<u32> {
 
     fn decode(value: &mut Self, buf: &mut Bytes) -> Result<(), Error> {
         let len = decode_variable_integer(buf)?;
-        // `decode_variable_integer` only inspects the bytes, it doesn't
-        // consume them, so the buffer must be advanced manually.
         buf.advance(len_bytes(len as usize));
         value.push(len);
         Ok(())
