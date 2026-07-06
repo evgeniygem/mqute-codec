@@ -139,10 +139,10 @@ where
     /// assert_eq!(buffer.as_ref(), &[0x30, 0x02, 0x00, 0x01]);
     /// ```
     fn encode(&mut self, item: T, dst: &mut BytesMut) -> Result<(), Self::Error> {
-        if let Some(max_size) = self.outbound_max_size {
-            if item.encoded_len() > max_size {
-                return Err(Error::OutgoingPayloadSizeLimitExceeded(item.encoded_len()));
-            }
+        if let Some(max_size) = self.outbound_max_size
+            && item.encoded_len() > max_size
+        {
+            return Err(Error::OutgoingPayloadSizeLimitExceeded(item.encoded_len()));
         }
 
         item.encode(dst)

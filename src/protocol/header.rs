@@ -317,10 +317,10 @@ impl FixedHeader {
 
         let header = FixedHeader::try_from(control_byte, remaining_len)?;
 
-        if let Some(max_size) = inbound_max_size {
-            if header.remaining_len > max_size {
-                return Err(Error::PayloadSizeLimitExceeded(header.remaining_len));
-            }
+        if let Some(max_size) = inbound_max_size
+            && header.remaining_len > max_size
+        {
+            return Err(Error::PayloadSizeLimitExceeded(header.remaining_len));
         }
 
         let packet_len = header.packet_len();

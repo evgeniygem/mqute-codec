@@ -5,17 +5,17 @@
 //! The Connect packet is the first packet sent by a client to initiate a connection
 //! with an MQTT broker.
 
-use super::property::{Property, PropertyFrame, property_len};
 use super::property::{property_decode, property_decode_non_zero, property_encode};
-use crate::Error;
+use super::property::{property_len, Property, PropertyFrame};
 use crate::codec::util::{
     decode_byte, decode_bytes, decode_string, decode_variable_integer, encode_bytes, encode_string,
     encode_variable_integer,
 };
+use crate::protocol::common::{connect, ConnectHeader};
 use crate::protocol::common::{ConnectFrame, WillFrame};
-use crate::protocol::common::{ConnectHeader, connect};
 use crate::protocol::util::len_bytes;
-use crate::protocol::{Credentials, Protocol, QoS, util};
+use crate::protocol::{util, Credentials, Protocol, QoS};
+use crate::Error;
 use bit_field::BitField;
 use bytes::{Buf, Bytes, BytesMut};
 use std::ops::RangeInclusive;
@@ -293,10 +293,11 @@ impl PropertyFrame for WillProperties {
                 }
                 Property::PayloadFormatIndicator => {
                     property_decode!(&mut properties.payload_format_indicator, buf);
-                    if let Some(value) = properties.payload_format_indicator {
-                        if value != 0 && value != 1 {
-                            return Err(Error::ProtocolError);
-                        }
+                    if let Some(value) = properties.payload_format_indicator
+                        && value != 0
+                        && value != 1
+                    {
+                        return Err(Error::ProtocolError);
                     }
                 }
                 Property::MessageExpiryInterval => {

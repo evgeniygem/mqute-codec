@@ -153,7 +153,7 @@ impl TopicFilters {
 
         // Validate all topic filters
         for value in &values {
-            if !util::is_valid_topic_filter(&value) {
+            if !util::is_valid_topic_filter(value) {
                 panic!("Invalid topic filter: '{}'", value);
             }
         }

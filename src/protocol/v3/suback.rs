@@ -23,7 +23,7 @@ pub struct ReturnCode(QoS);
 
 impl ReturnCode {
     pub fn new(qos: QoS) -> Self {
-        ReturnCode { 0: qos }
+        ReturnCode(qos)
     }
 }
 
