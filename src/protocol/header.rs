@@ -344,3 +344,62 @@ const fn build_control_byte(packet_type: PacketType, flags: Flags) -> u8 {
     let flags = (flags.dup as u8) << 3 | (flags.qos as u8) << 1 | (flags.retain as u8);
     byte | flags
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn try_from_rejects_reserved_qos_for_publish() {
+        // Publish packet type (0x30) with QoS bits set to the reserved value 3
+        // (0b11 at bits 2-1): dup=0, qos=3, retain=0 -> 0b0000_0110.
+        let control_byte = 0x30 | 0x06;
+        let result = FixedHeader::try_from(control_byte, 0);
+        assert!(matches!(result, Err(Error::InvalidQos(3))));
+    }
+
+    #[test]
+    fn try_from_rejects_reserved_qos_regardless_of_packet_type() {
+        // The reserved QoS bit pattern is invalid on the wire for any packet
+        // type, not just Publish (e.g. PubAck: 0x40 | 0b0110).
+        let control_byte = 0x40 | 0x06;
+        let result = FixedHeader::try_from(control_byte, 0);
+        assert!(matches!(result, Err(Error::InvalidQos(3))));
+    }
+
+    #[test]
+    fn try_from_accepts_all_valid_qos_values() {
+        for (qos_bits, expected) in [
+            (0u8, QoS::AtMostOnce),
+            (1u8, QoS::AtLeastOnce),
+            (2u8, QoS::ExactlyOnce),
+        ] {
+            let control_byte = 0x30 | (qos_bits << 1);
+            let header = FixedHeader::try_from(control_byte, 0).unwrap();
+            // Must not panic and must report the expected QoS.
+            assert_eq!(header.flags().qos, expected);
+        }
+    }
+
+    #[test]
+    fn decode_rejects_reserved_qos_without_panicking() {
+        // A full wire-format buffer for a Publish packet with reserved QoS
+        // bits must be rejected gracefully rather than panicking.
+        let buf = [0x30 | 0x06, 0x00];
+        let result = FixedHeader::decode(&buf, None);
+        assert!(matches!(result, Err(Error::InvalidQos(3))));
+    }
+
+    #[test]
+    fn new_and_with_flags_never_produce_invalid_qos() {
+        // Constructors driven by the type-safe `Flags`/`QoS` API can never
+        // produce the reserved bit pattern, so `flags()` must not panic.
+        let header = FixedHeader::new(PacketType::Publish, 0);
+        assert_eq!(header.flags(), Flags::default());
+
+        for qos in [QoS::AtMostOnce, QoS::AtLeastOnce, QoS::ExactlyOnce] {
+            let header = FixedHeader::with_flags(PacketType::Publish, Flags::new(qos), 0);
+            assert_eq!(header.flags().qos, qos);
+        }
+    }
+}

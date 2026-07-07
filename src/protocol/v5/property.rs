@@ -459,3 +459,79 @@ pub(crate) use property_decode;
 pub(crate) use property_decode_non_zero;
 pub(crate) use property_encode;
 pub(crate) use property_len;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn option_bool_decode_accepts_valid_values() {
+        let mut value: Option<bool> = None;
+        let mut buf = Bytes::from(vec![0x00u8]);
+        PropertyValue::decode(&mut value, &mut buf).unwrap();
+        assert_eq!(value, Some(false));
+
+        let mut value: Option<bool> = None;
+        let mut buf = Bytes::from(vec![0x01u8]);
+        PropertyValue::decode(&mut value, &mut buf).unwrap();
+        assert_eq!(value, Some(true));
+    }
+
+    #[test]
+    fn option_bool_decode_rejects_invalid_byte() {
+        let mut value: Option<bool> = None;
+        let mut buf = Bytes::from(vec![0x02u8]);
+        let result = PropertyValue::decode(&mut value, &mut buf);
+        assert!(matches!(result, Err(Error::ProtocolError)));
+    }
+
+    #[test]
+    fn option_bool_decode_rejects_duplicate_property() {
+        let mut value: Option<bool> = Some(true);
+        let mut buf = Bytes::from(vec![0x00u8]);
+        let result = PropertyValue::decode(&mut value, &mut buf);
+        assert!(matches!(result, Err(Error::ProtocolError)));
+    }
+
+    #[test]
+    fn option_qos_decode_accepts_valid_values() {
+        let mut value: Option<QoS> = None;
+        let mut buf = Bytes::from(vec![0x00u8]);
+        PropertyValue::decode(&mut value, &mut buf).unwrap();
+        assert_eq!(value, Some(QoS::AtMostOnce));
+
+        let mut value: Option<QoS> = None;
+        let mut buf = Bytes::from(vec![0x01u8]);
+        PropertyValue::decode(&mut value, &mut buf).unwrap();
+        assert_eq!(value, Some(QoS::AtLeastOnce));
+    }
+
+    #[test]
+    fn option_qos_decode_rejects_value_above_one() {
+        // MaximumQoS only allows 0 or 1 on the wire, even though 2 is
+        // otherwise a valid `QoS` value elsewhere in the protocol.
+        let mut value: Option<QoS> = None;
+        let mut buf = Bytes::from(vec![0x02u8]);
+        let result = PropertyValue::decode(&mut value, &mut buf);
+        assert!(matches!(result, Err(Error::ProtocolError)));
+    }
+
+    #[test]
+    fn vec_u32_decode_advances_buffer_for_consecutive_values() {
+        // Regression test: `decode_variable_integer` only inspects bytes, it
+        // doesn't consume them, so `Vec<u32>::decode` must advance the
+        // buffer itself. If it didn't, the second `decode` call below would
+        // either re-read the first value's bytes or read past the end.
+        let mut encoded = BytesMut::new();
+        encode_variable_integer(&mut encoded, 5).unwrap();
+        encode_variable_integer(&mut encoded, 300).unwrap();
+        let mut buf = encoded.freeze();
+
+        let mut values: Vec<u32> = Vec::new();
+        PropertyValue::decode(&mut values, &mut buf).unwrap();
+        PropertyValue::decode(&mut values, &mut buf).unwrap();
+
+        assert_eq!(values, vec![5, 300]);
+        assert!(buf.is_empty(), "buffer should be fully consumed");
+    }
+}

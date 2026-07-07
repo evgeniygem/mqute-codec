@@ -467,3 +467,82 @@ impl Decode for Subscribe {
 }
 
 impl traits::Subscribe for Subscribe {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::codec::PacketCodec;
+    use tokio_util::codec::Decoder;
+
+    #[test]
+    fn subscribe_properties_decode_advances_past_subscription_identifier() {
+        // Regression test: `decode_variable_integer` only inspects bytes, it
+        // doesn't consume them. Previously the SubscriptionIdentifier branch
+        // forgot to advance the buffer afterwards, so the following UserProp
+        // property would be misread as part of the identifier's own bytes.
+        let mut buf = BytesMut::new();
+
+        buf.put_u8(Property::SubscriptionIdentifier.into());
+        encode_variable_integer(&mut buf, 42).unwrap();
+
+        buf.put_u8(Property::UserProp.into());
+        encode_string(&mut buf, "client");
+        encode_string(&mut buf, "rust");
+
+        let mut buf = buf.freeze();
+        let properties = SubscribeProperties::decode(&mut buf).unwrap().unwrap();
+
+        assert_eq!(properties.subscription_id, Some(42));
+        assert_eq!(
+            properties.user_properties,
+            vec![("client".to_string(), "rust".to_string())]
+        );
+        assert!(buf.is_empty(), "buffer should be fully consumed");
+    }
+
+    #[test]
+    fn subscribe_properties_decode_rejects_duplicate_subscription_identifier() {
+        let mut buf = BytesMut::new();
+        buf.put_u8(Property::SubscriptionIdentifier.into());
+        encode_variable_integer(&mut buf, 1).unwrap();
+        buf.put_u8(Property::SubscriptionIdentifier.into());
+        encode_variable_integer(&mut buf, 2).unwrap();
+
+        let mut buf = buf.freeze();
+        let result = SubscribeProperties::decode(&mut buf);
+        assert!(matches!(result, Err(Error::ProtocolError)));
+    }
+
+    #[test]
+    fn subscribe_decode_full_packet_with_subscription_identifier() {
+        let mut codec = PacketCodec::new(None, None);
+
+        // Properties: Subscription Identifier = 7
+        let mut properties_buf = BytesMut::new();
+        properties_buf.put_u8(Property::SubscriptionIdentifier.into());
+        encode_variable_integer(&mut properties_buf, 7).unwrap();
+
+        // Variable header: packet id + properties length + properties
+        let mut payload = BytesMut::new();
+        payload.put_u16(0x1234);
+        encode_variable_integer(&mut payload, properties_buf.len() as u32).unwrap();
+        payload.extend_from_slice(&properties_buf);
+
+        // Payload: one topic filter "sensors/#" with default options
+        encode_string(&mut payload, "sensors/#");
+        payload.put_u8(0x00);
+
+        let mut stream = BytesMut::new();
+        stream.put_u8(((PacketType::Subscribe as u8) << 4) | 0x02);
+        encode_variable_integer(&mut stream, payload.len() as u32).unwrap();
+        stream.extend_from_slice(&payload);
+
+        let raw_packet = codec.decode(&mut stream).unwrap().unwrap();
+        let packet = Subscribe::decode(raw_packet).unwrap();
+
+        assert_eq!(packet.packet_id(), 0x1234);
+        assert_eq!(packet.properties().unwrap().subscription_id, Some(7));
+        assert_eq!(packet.filters().len(), 1);
+        assert_eq!(packet.filters()[0].topic, "sensors/#");
+    }
+}

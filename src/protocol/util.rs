@@ -256,4 +256,24 @@ mod tests {
             assert!(!util::is_valid_topic_filter(filter));
         }
     }
+
+    #[test]
+    fn test_topic_filter_multibyte_utf8_before_wildcard() {
+        // A 2-byte UTF-8 character ('é') immediately followed by the valid
+        // "/#" suffix must be accepted. `pos` (byte offset of '#') and the
+        // character count diverge here, which used to make the old
+        // char-indexed implementation reject this (or worse, panic).
+        assert!(util::is_valid_topic_filter("é/#"));
+        assert!(util::is_valid_topic_filter("sensors/日本語/temperature"));
+        assert!(util::is_valid_topic_filter("日本語/#"));
+    }
+
+    #[test]
+    fn test_topic_filter_multibyte_utf8_without_separator_is_rejected_not_panicking() {
+        // A 3-byte UTF-8 character ('€') directly followed by '#' (no '/' in
+        // between) must be rejected. This used to panic because `pos - 1`,
+        // a byte offset, was passed to `chars().nth(...)`, which indexes by
+        // character and was out of bounds for this input.
+        assert!(!util::is_valid_topic_filter("€#"));
+    }
 }

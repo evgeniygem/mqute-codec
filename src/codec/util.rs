@@ -120,3 +120,67 @@ pub(crate) fn decode_variable_integer(buf: &[u8]) -> Result<u32, Error> {
 
     Ok(value)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn variable_integer_round_trip_boundaries() {
+        // One value per byte-length boundary from the MQTT spec.
+        let values = [0u32, 1, 127, 128, 16_383, 16_384, 2_097_151, 2_097_152, 268_435_455];
+
+        for &value in &values {
+            let mut buf = BytesMut::new();
+            encode_variable_integer(&mut buf, value).unwrap();
+            assert_eq!(buf.len(), crate::protocol::util::len_bytes(value as usize));
+
+            let decoded = decode_variable_integer(&buf).unwrap();
+            assert_eq!(decoded, value, "round trip failed for {value}");
+        }
+    }
+
+    #[test]
+    fn encode_rejects_value_above_max() {
+        let mut buf = BytesMut::new();
+        let result = encode_variable_integer(&mut buf, PAYLOAD_MAX_SIZE + 1);
+        assert!(matches!(result, Err(Error::PayloadTooLarge)));
+    }
+
+    #[test]
+    fn decode_rejects_non_canonical_zero() {
+        // 0 encoded using 2 bytes instead of the minimal 1 byte.
+        let buf = [0x80, 0x00];
+        let result = decode_variable_integer(&buf);
+        assert!(matches!(result, Err(Error::MalformedVariableByteInteger)));
+    }
+
+    #[test]
+    fn decode_rejects_non_canonical_padded_value() {
+        // 10 encoded using 2 bytes instead of the minimal 1 byte.
+        let buf = [0x8A, 0x00];
+        let result = decode_variable_integer(&buf);
+        assert!(matches!(result, Err(Error::MalformedVariableByteInteger)));
+    }
+
+    #[test]
+    fn decode_rejects_more_than_four_bytes() {
+        let buf = [0xFF, 0xFF, 0xFF, 0xFF, 0x01];
+        let result = decode_variable_integer(&buf);
+        assert!(matches!(result, Err(Error::MalformedVariableByteInteger)));
+    }
+
+    #[test]
+    fn decode_reports_not_enough_bytes() {
+        let buf = [0x80];
+        let result = decode_variable_integer(&buf);
+        assert!(matches!(result, Err(Error::NotEnoughBytes(_))));
+    }
+
+    #[test]
+    fn decode_accepts_maximal_four_byte_value() {
+        let buf = [0xFF, 0xFF, 0xFF, 0x7F];
+        let decoded = decode_variable_integer(&buf).unwrap();
+        assert_eq!(decoded, PAYLOAD_MAX_SIZE);
+    }
+}
